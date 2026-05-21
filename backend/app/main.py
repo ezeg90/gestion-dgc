@@ -6,6 +6,7 @@ from app.modules.usuarios.router import router as usuarios_router
 from app.modules.clientes.router import router as clientes_router
 from app.modules.productos.router import router as productos_router
 from app.modules.precios.router import router as precios_router
+from app.modules.pedidos.router import router as pedidos_router
 
 app = FastAPI(
     title="Sistema de Gestión DGC",
@@ -15,7 +16,6 @@ app = FastAPI(
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
 
-# CORS — ajustar origins en producción
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if settings.ENVIRONMENT == "development" else [
@@ -26,13 +26,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
 app.include_router(usuarios_router,  prefix="/api/v1")
 app.include_router(clientes_router,  prefix="/api/v1")
 app.include_router(productos_router, prefix="/api/v1")
 app.include_router(precios_router,   prefix="/api/v1")
+app.include_router(pedidos_router,   prefix="/api/v1")
 
 
 @app.get("/", tags=["Health"])
 def health_check():
     return {"status": "ok", "version": "1.0.0"}
+
