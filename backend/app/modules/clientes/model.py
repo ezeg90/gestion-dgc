@@ -27,4 +27,4 @@ class Cliente(Base):
     updated_at       = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     lista_precios    = relationship("ListaPrecios", back_populates="clientes")
-    cuenta_corriente = relationship("CuentaCorriente", back_populates="cliente", uselist=False)
+
