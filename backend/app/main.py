@@ -16,12 +16,18 @@ app = FastAPI(
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
 
+# Orígenes permitidos — panel de validación + desarrollo local
+ALLOWED_ORIGINS = [
+    "https://ezeg90.github.io",   # panel de validación GitHub Pages
+    "http://localhost:3000",       # React dev local
+    "http://localhost:5173",       # Vite dev local
+    "http://localhost:8080",       # alternativa local
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.ENVIRONMENT == "development" else [
-        "https://tu-frontend.vercel.app"
-    ],
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,       # False permite usar wildcard con Authorization header
     allow_methods=["*"],
     allow_headers=["*"],
 )
