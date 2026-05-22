@@ -653,24 +653,51 @@ async function patchPedido(id, estado){
 }
 
 async function modalNuevoPedido(){
-  let clientes=[], productos=[];
-  try{ [clientes,productos] = await Promise.all([api('/api/v1/clientes/'),api('/api/v1/productos/')]); }catch(e){}
-  window._pItems = [];
-  window._pProds = productos;
+  let clientes=[], productos=[], listas=[];
+  try{
+    [clientes, productos, listas] = await Promise.all([
+      api('/api/v1/clientes/'),
+      api('/api/v1/productos/'),
+      api('/api/v1/precios/'),
+    ]);
+  }catch(e){}
+  window._pProds    = productos;
+  window._pListas   = listas;
+  window._pClientes = clientes.filter(c=>c.estado==='activo');
+  // mapa clienteId → lista completa con items
+  window._pPrecioMap = {};
+  _itemIdx = 0;
+
   openModal(`
     <h3>Nuevo pedido</h3>
-    <div class="field"><label>Cliente *</label>
-      <select id="np-cli">
-        <option value="">Seleccioná un cliente…</option>
-        ${clientes.filter(c=>c.estado==='activo').map(c=>`<option value="${c.id}">${c.razon_social}</option>`).join('')}
-      </select>
+    <div class="form-row">
+      <div class="field"><label>Cliente *</label>
+        <select id="np-cli" onchange="onClienteChange(this.value)">
+          <option value="">Seleccioná un cliente…</option>
+          ${window._pClientes.map(c=>`<option value="${c.id}" data-lista="${c.lista_precios_id||''}">${c.razon_social}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Lista de precios asignada</label>
+        <div id="np-lista-info" style="padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:13px;color:var(--muted);min-height:38px">
+          — seleccioná un cliente
+        </div>
+      </div>
     </div>
     <div class="field"><label>Fecha de entrega</label><input id="np-fecha" type="date"/></div>
     <div class="field"><label>Observaciones</label><textarea id="np-obs" rows="2"></textarea></div>
     <div class="divider"></div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Items</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:6px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Producto</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Cantidad</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Precio $</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Subtotal</div>
+    </div>
     <div id="np-items-wrap"></div>
     <button class="btn btn-ghost" style="width:100%;margin-bottom:4px" onclick="addPedidoItem()">+ Agregar producto</button>
+    <div class="divider"></div>
+    <div style="text-align:right;font-size:14px;font-weight:600;font-family:var(--mono)">
+      Total: <span id="np-total" style="color:var(--accent2)">$0</span>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="crearPedido()">Crear pedido</button>
@@ -678,20 +705,91 @@ async function modalNuevoPedido(){
   addPedidoItem();
 }
 
+async function onClienteChange(clienteId){
+  const infoEl = document.getElementById('np-lista-info');
+  if(!clienteId){ infoEl.textContent = '— seleccioná un cliente'; infoEl.style.color='var(--muted)'; return; }
+
+  // Obtener datos del cliente seleccionado
+  const cliente = window._pClientes.find(c=>c.id===clienteId);
+  const listaId = cliente?.lista_precios_id;
+
+  if(!listaId){
+    infoEl.innerHTML = '<span style="color:var(--warn)">⚠ Sin lista asignada — deberás ingresar precios manualmente</span>';
+    window._pPrecioMap = {};
+    return;
+  }
+
+  // Obtener lista con items
+  try{
+    const lista = await api(`/api/v1/precios/${listaId}`);
+    const listas = window._pListas||[];
+    const listaMeta = listas.find(l=>l.id===listaId);
+    infoEl.innerHTML = `<span style="color:var(--accent2)">✓</span> <strong>${lista.nombre}</strong> <span class="badge b-${listaMeta?.tipo||'minorista'}" style="margin-left:6px">${listaMeta?.tipo||''}</span> — ${lista.items.length} producto(s) con precio`;
+    infoEl.style.color = 'var(--text)';
+
+    // Construir mapa productoId → precio
+    window._pPrecioMap = {};
+    lista.items.forEach(item => window._pPrecioMap[item.producto_id] = item.precio);
+
+    // Actualizar precios en los items ya cargados
+    for(let i=0; i<_itemIdx; i++){
+      const pidEl = document.getElementById(`pi-p-${i}`);
+      if(pidEl?.value) autocompletarPrecio(i, pidEl.value);
+    }
+  }catch(e){
+    infoEl.innerHTML = '<span style="color:var(--warn)">Error cargando lista de precios</span>';
+  }
+}
+
+function autocompletarPrecio(idx, productoId){
+  const precioEl = document.getElementById(`pi-pr-${idx}`);
+  if(!precioEl) return;
+  const precio = window._pPrecioMap?.[productoId];
+  if(precio){
+    precioEl.value = precio;
+    precioEl.style.borderColor = 'var(--accent2)';
+    precioEl.title = 'Precio de la lista del cliente';
+  } else {
+    precioEl.value = '';
+    precioEl.style.borderColor = 'var(--border)';
+  }
+  recalcularTotal();
+}
+
+function recalcularTotal(){
+  let total = 0;
+  for(let i=0; i<_itemIdx; i++){
+    const cant  = parseFloat(document.getElementById(`pi-c-${i}`)?.value||0);
+    const precio = parseFloat(document.getElementById(`pi-pr-${i}`)?.value||0);
+    const sub   = cant * precio;
+    total += sub;
+    const subEl = document.getElementById(`pi-sub-${i}`);
+    if(subEl) subEl.textContent = sub > 0 ? `$${sub.toLocaleString('es-AR',{minimumFractionDigits:2})}` : '—';
+  }
+  const totalEl = document.getElementById('np-total');
+  if(totalEl) totalEl.textContent = `$${total.toLocaleString('es-AR',{minimumFractionDigits:2})}`;
+}
+
 let _itemIdx = 0;
 function addPedidoItem(){
   const prods = window._pProds||[];
   const i = _itemIdx++;
   const d = document.createElement('div');
-  d.className = 'form-3';
+  d.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;align-items:center';
   d.id = `pi-row-${i}`;
   d.innerHTML = `
-    <div class="field" style="margin:0"><select id="pi-p-${i}">
+    <select id="pi-p-${i}" onchange="autocompletarPrecio(${i}, this.value)"
+      style="padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none">
       <option value="">Producto…</option>
       ${prods.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}
-    </select></div>
-    <div class="field" style="margin:0"><input id="pi-c-${i}" type="number" step="0.001" min="0.001" placeholder="Cant."/></div>
-    <div class="field" style="margin:0"><input id="pi-pr-${i}" type="number" step="0.01" min="0" placeholder="Precio (opt.)"/></div>`;
+    </select>
+    <input id="pi-c-${i}" type="number" step="0.001" min="0.001" placeholder="Cant."
+      style="padding:8px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none"
+      oninput="recalcularTotal()"/>
+    <input id="pi-pr-${i}" type="number" step="0.01" min="0" placeholder="Precio"
+      style="padding:8px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none"
+      oninput="recalcularTotal()"/>
+    <span id="pi-sub-${i}" style="font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right">—</span>`;
   document.getElementById('np-items-wrap').appendChild(d);
 }
 
@@ -703,7 +801,11 @@ async function crearPedido(){
     const pid  = document.getElementById(`pi-p-${i}`)?.value;
     const cant = document.getElementById(`pi-c-${i}`)?.value;
     const pr   = document.getElementById(`pi-pr-${i}`)?.value;
-    if(pid&&cant) items.push({producto_id:pid,cantidad:parseFloat(cant),...(pr?{precio_unitario:parseFloat(pr)}:{})});
+    if(pid&&cant) items.push({
+      producto_id: pid,
+      cantidad: parseFloat(cant),
+      ...(pr ? {precio_unitario: parseFloat(pr)} : {})
+    });
   }
   if(!items.length){ toast('Agregá al menos un producto','err'); return; }
   const b = {
