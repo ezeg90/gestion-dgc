@@ -2,6 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+
+# Importar TODOS los modelos para que SQLAlchemy los registre al arrancar
+# Aunque no tengan router aún, deben estar importados
+from app.modules.usuarios.model import Usuario
+from app.modules.clientes.model import Cliente
+from app.modules.productos.model import Producto
+from app.modules.precios.model import ListaPrecios, ListaPreciosItem
+from app.modules.rutas.model import Ruta, RutaParada       # necesario para Pedido
+from app.modules.pedidos.model import Pedido, PedidoItem
+
+# Routers
 from app.modules.usuarios.router import router as usuarios_router
 from app.modules.clientes.router import router as clientes_router
 from app.modules.productos.router import router as productos_router
@@ -16,18 +27,18 @@ app = FastAPI(
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
 
-# Orígenes permitidos — panel de validación + desarrollo local
+# Orígenes permitidos
 ALLOWED_ORIGINS = [
-    "https://ezeg90.github.io",   # panel de validación GitHub Pages
-    "http://localhost:3000",       # React dev local
-    "http://localhost:5173",       # Vite dev local
-    "http://localhost:8080",       # alternativa local
+    "https://ezeg90.github.io",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:8080",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=False,       # False permite usar wildcard con Authorization header
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -42,4 +53,3 @@ app.include_router(pedidos_router,   prefix="/api/v1")
 @app.get("/", tags=["Health"])
 def health_check():
     return {"status": "ok", "version": "1.0.0"}
-
