@@ -49,12 +49,13 @@ class ClienteOut(ClienteBase):
 
 
 class ClienteListOut(BaseModel):
-    """Versión reducida para listados"""
-    id:           UUID
-    razon_social: str
-    telefono:     Optional[str]
-    localidad:    Optional[str]
-    estado:       EstadoCliente
+    id:               UUID
+    razon_social:     str
+    cuit:             Optional[str] = None
+    telefono:         Optional[str] = None
+    localidad:        Optional[str] = None
+    estado:           EstadoCliente
+    lista_precios_id: Optional[UUID] = None  # necesario para resolver precios en pedidos
 
     class Config:
         from_attributes = True

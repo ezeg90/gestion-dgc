@@ -6,16 +6,14 @@
 <title>Panel DGC — Validación</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-:root {
-  --bg:#0f1117; --surface:#181c27; --card:#1e2235; --border:#2a2f45;
-  --accent:#4f7cff; --accent2:#00d4aa; --warn:#ff6b6b; --orange:#f59e0b;
-  --text:#e8eaf0; --muted:#7b82a0;
-  --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+:root{
+  --bg:#0f1117;--surface:#181c27;--card:#1e2235;--border:#2a2f45;
+  --accent:#4f7cff;--accent2:#00d4aa;--warn:#ff6b6b;--orange:#f59e0b;
+  --text:#e8eaf0;--muted:#7b82a0;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex}
-
-/* SIDEBAR */
 #sidebar{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
 .logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
 .logo-title{font-size:15px;font-weight:600}.logo-title span{color:var(--accent)}
@@ -30,37 +28,26 @@ nav{flex:1;padding:12px 10px;overflow-y:auto}
 .sidebar-footer{padding:14px 10px;border-top:1px solid var(--border)}
 .user-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px}
 .avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
-
-/* MAIN */
 #main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
 #topbar{height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:12px;background:var(--bg);position:sticky;top:0;z-index:50}
 .page-title{font-size:15px;font-weight:600;flex:1}
 #content{padding:24px 28px;flex:1}
-
-/* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
 .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#3a6aff}
 .btn-ghost{background:var(--card);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
 .btn-danger{background:rgba(255,107,107,.12);color:var(--warn);border:1px solid rgba(255,107,107,.25)}.btn-danger:hover{background:rgba(255,107,107,.2)}
 .btn-success{background:rgba(0,212,170,.12);color:var(--accent2);border:1px solid rgba(0,212,170,.25)}
 .btn-sm{padding:4px 10px;font-size:12px}
-
-/* LOGIN */
 #login-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:380px}
 .login-box h2{font-size:20px;font-weight:600;margin-bottom:4px}
 .login-box p{color:var(--muted);font-size:13px;margin-bottom:28px}
-
-/* FORM */
 .field{margin-bottom:14px}
 .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
 .field input,.field select,.field textarea{width:100%;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13.5px;font-family:var(--font);outline:none;transition:border .15s}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
 .field textarea{resize:vertical}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.form-3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:8px}
-
-/* TABLE */
 .section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .section-header h3{font-size:14px;font-weight:600;flex:1}
 .search-input{padding:7px 12px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;font-family:var(--font);outline:none;width:220px}
@@ -71,8 +58,6 @@ thead th{background:var(--surface);padding:10px 14px;text-align:left;font-size:1
 tbody tr{border-top:1px solid var(--border);transition:background .1s}
 tbody tr:hover{background:rgba(255,255,255,.02)}
 td{padding:11px 14px;vertical-align:middle}
-
-/* BADGES */
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
 .b-activo,.b-entregado{background:rgba(0,212,170,.12);color:var(--accent2)}
 .b-inactivo,.b-cancelado{background:rgba(255,107,107,.12);color:var(--warn)}
@@ -82,28 +67,21 @@ td{padding:11px 14px;vertical-align:middle}
 .b-mayorista{background:rgba(79,124,255,.12);color:var(--accent)}
 .b-minorista{background:rgba(0,212,170,.12);color:var(--accent2)}
 .b-especial{background:rgba(245,158,11,.12);color:var(--orange)}
-
-/* STATS */
 .stats-row{display:grid;gap:14px;margin-bottom:24px}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
 .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
 .stat-value{font-size:26px;font-weight:600;margin:4px 0 2px;font-family:var(--mono)}
 .stat-sub{font-size:11.5px;color:var(--muted)}
-
-/* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:500px;max-height:88vh;overflow-y:auto}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:520px;max-height:90vh;overflow-y:auto}
 .modal h3{font-size:15px;font-weight:600;margin-bottom:20px}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px}
 .detail-item span{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
-
-/* MISC */
 .mono{font-family:var(--mono);font-size:12px}
 .muted{color:var(--muted)}
 .divider{height:1px;background:var(--border);margin:16px 0}
 .empty{text-align:center;padding:48px;color:var(--muted);font-size:13.5px}
-.empty-icon{font-size:32px;margin-bottom:10px}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 #toast{position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
@@ -111,19 +89,24 @@ td{padding:11px 14px;vertical-align:middle}
 #toast.ok{background:rgba(0,212,170,.15);border:1px solid rgba(0,212,170,.4);color:var(--accent2)}
 #toast.err{background:rgba(255,107,107,.15);border:1px solid rgba(255,107,107,.4);color:var(--warn)}
 .loading-page{display:flex;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--muted)}
+.lista-info-box{padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:13px;min-height:38px;display:flex;align-items:center}
+.items-grid-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:6px}
+.items-grid-header div{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.item-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.item-row select,.item-row input{padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:100%}
+.item-row input:focus,.item-row select:focus{border-color:var(--accent)}
+.item-row .subtotal{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right}
+.btn-remove{background:none;border:none;color:var(--warn);cursor:pointer;font-size:16px;padding:4px;line-height:1}
+.total-row{text-align:right;font-size:14px;font-weight:600;font-family:var(--mono);margin-top:8px}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <h2>Sistema DGC</h2>
     <p>Panel de validación — conecta con tu API en Render</p>
-    <div class="field">
-      <label>URL de la API</label>
-      <input id="inp-api" value="https://gestion-dgc-api.onrender.com" style="font-family:var(--mono);font-size:12px"/>
-    </div>
+    <div class="field"><label>URL de la API</label><input id="inp-api" value="https://gestion-dgc-api.onrender.com" style="font-family:var(--mono);font-size:12px"/></div>
     <div class="field"><label>Email</label><input id="inp-email" type="email" value="admin@sistema.com"/></div>
     <div class="field"><label>Contraseña</label><input id="inp-pass" type="password" placeholder="••••••••"/></div>
     <div id="login-err" style="color:var(--warn);font-size:12px;min-height:18px;margin-bottom:10px"></div>
@@ -131,7 +114,6 @@ td{padding:11px 14px;vertical-align:middle}
   </div>
 </div>
 
-<!-- SIDEBAR -->
 <div id="sidebar">
   <div class="logo">
     <div class="logo-title">Sistema <span>DGC</span></div>
@@ -165,7 +147,6 @@ td{padding:11px 14px;vertical-align:middle}
   </div>
 </div>
 
-<!-- MAIN -->
 <div id="main">
   <div id="topbar">
     <div class="page-title" id="page-title">Dashboard</div>
@@ -174,120 +155,80 @@ td{padding:11px 14px;vertical-align:middle}
   <div id="content"><div class="loading-page"><div class="spinner"></div></div></div>
 </div>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modal-body"></div>
 </div>
-
 <div id="toast"></div>
 
 <script>
-// ── ESTADO GLOBAL ────────────────────────────────────────────
-let API = 'https://gestion-dgc-api.onrender.com';
-let TOKEN = null;
+let API='https://gestion-dgc-api.onrender.com', TOKEN=null;
 
 // ── AUTH ─────────────────────────────────────────────────────
-async function doLogin() {
-  API = document.getElementById('inp-api').value.replace(/\/+$/,'');
-  const email = document.getElementById('inp-email').value;
-  const pass  = document.getElementById('inp-pass').value;
-  const errEl = document.getElementById('login-err');
-  errEl.textContent = 'Conectando…';
-  try {
-    const r = await fetch(`${API}/api/v1/usuarios/login`,{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password: pass})
-    });
-    if(!r.ok){ errEl.textContent='Email o contraseña incorrectos'; return; }
-    const d = await r.json();
-    TOKEN = d.access_token;
-    document.getElementById('user-name').textContent = d.usuario.nombre;
-    document.getElementById('user-role').textContent  = d.usuario.rol;
-    document.getElementById('user-av').textContent    = d.usuario.nombre[0].toUpperCase();
-    document.getElementById('login-screen').style.display = 'none';
+async function doLogin(){
+  API=document.getElementById('inp-api').value.replace(/\/+$/,'');
+  const email=document.getElementById('inp-email').value;
+  const pass=document.getElementById('inp-pass').value;
+  const errEl=document.getElementById('login-err');
+  errEl.textContent='Conectando…';
+  try{
+    const r=await fetch(`${API}/api/v1/usuarios/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    if(!r.ok){errEl.textContent='Email o contraseña incorrectos';return;}
+    const d=await r.json();
+    TOKEN=d.access_token;
+    document.getElementById('user-name').textContent=d.usuario.nombre;
+    document.getElementById('user-role').textContent=d.usuario.rol;
+    document.getElementById('user-av').textContent=d.usuario.nombre[0].toUpperCase();
+    document.getElementById('login-screen').style.display='none';
     goTo(document.querySelector('.nav-item[data-page="dashboard"]'));
-  } catch(e) {
-    errEl.textContent = 'No se pudo conectar. Verificá la URL de la API.';
-  }
+  }catch(e){errEl.textContent='No se pudo conectar. Verificá la URL.';}
 }
-document.getElementById('inp-pass').addEventListener('keydown', e => e.key==='Enter' && doLogin());
+document.getElementById('inp-pass').addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
+function doLogout(){TOKEN=null;document.getElementById('login-screen').style.display='flex';document.getElementById('inp-pass').value='';}
 
-function doLogout(){
-  TOKEN = null;
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('inp-pass').value = '';
-}
-
-// ── FETCH HELPER ─────────────────────────────────────────────
-async function api(path, opts={}){
-  const r = await fetch(`${API}${path}`,{
-    ...opts,
-    headers:{'Authorization':`Bearer ${TOKEN}`,'Content-Type':'application/json',...(opts.headers||{})}
-  });
-  if(!r.ok){
-    const err = await r.json().catch(()=>({detail:'Error desconocido'}));
-    throw new Error(Array.isArray(err.detail)? err.detail.map(e=>e.msg).join(', ') : (err.detail||r.statusText));
-  }
-  if(r.status===204) return null;
+async function api(path,opts={}){
+  const r=await fetch(`${API}${path}`,{...opts,headers:{'Authorization':`Bearer ${TOKEN}`,'Content-Type':'application/json',...(opts.headers||{})}});
+  if(!r.ok){const err=await r.json().catch(()=>({detail:'Error desconocido'}));throw new Error(Array.isArray(err.detail)?err.detail.map(e=>e.msg).join(', '):(err.detail||r.statusText));}
+  if(r.status===204)return null;
   return r.json();
 }
 
 // ── ROUTER ───────────────────────────────────────────────────
-const PAGE_TITLES = {dashboard:'Dashboard',clientes:'Clientes',productos:'Productos',precios:'Listas de precios',pedidos:'Pedidos'};
-const PAGE_FNS    = {dashboard:pgDashboard, clientes:pgClientes, productos:pgProductos, precios:pgPrecios, pedidos:pgPedidos};
-
+const PAGE_TITLES={dashboard:'Dashboard',clientes:'Clientes',productos:'Productos',precios:'Listas de precios',pedidos:'Pedidos'};
+const PAGE_FNS={dashboard:pgDashboard,clientes:pgClientes,productos:pgProductos,precios:pgPrecios,pedidos:pgPedidos};
 function goTo(el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
-  const page = el.dataset.page;
-  document.getElementById('page-title').textContent = PAGE_TITLES[page]||page;
-  document.getElementById('topbar-actions').innerHTML = '';
+  const page=el.dataset.page;
+  document.getElementById('page-title').textContent=PAGE_TITLES[page]||page;
+  document.getElementById('topbar-actions').innerHTML='';
   setContent('<div class="loading-page"><div class="spinner"></div> Cargando…</div>');
   (PAGE_FNS[page]||pgComingSoon)();
 }
-
-function setContent(html){ document.getElementById('content').innerHTML = html; }
+function setContent(html){document.getElementById('content').innerHTML=html;}
 
 // ── TOAST ────────────────────────────────────────────────────
-function toast(msg, type='ok'){
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = `show ${type}`;
-  clearTimeout(el._t);
-  el._t = setTimeout(()=>el.className='', 3200);
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`show ${type}`;
+  clearTimeout(el._t);el._t=setTimeout(()=>el.className='',3200);
 }
 
 // ── MODAL ────────────────────────────────────────────────────
-function openModal(html){
-  document.getElementById('modal-body').innerHTML = html;
-  document.getElementById('modal-overlay').style.display = 'flex';
-}
-function closeModal(){ document.getElementById('modal-overlay').style.display = 'none'; }
-
-// ── BADGE ────────────────────────────────────────────────────
-function badge(val){ return `<span class="badge b-${val}">${val.replace(/_/g,' ')}</span>`; }
-
-// ── FILTRO TABLA ─────────────────────────────────────────────
-function filtrar(q, tbodyId){
-  document.querySelectorAll(`#${tbodyId} tr`).forEach(r=>{
-    r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
-  });
-}
+function openModal(html){document.getElementById('modal-body').innerHTML=html;document.getElementById('modal-overlay').style.display='flex';}
+function closeModal(){document.getElementById('modal-overlay').style.display='none';}
+function badge(val){return `<span class="badge b-${val}">${val.replace(/_/g,' ')}</span>`;}
+function filtrar(q,tbodyId){document.querySelectorAll(`#${tbodyId} tr`).forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';});}
 
 // ══════════════════════════════════════════════════════════════
-//  PÁGINAS
+//  DASHBOARD
 // ══════════════════════════════════════════════════════════════
-
-// ── DASHBOARD ────────────────────────────────────────────────
 async function pgDashboard(){
-  try {
-    const [clientes, productos, pedidos] = await Promise.all([
-      api('/api/v1/clientes/'), api('/api/v1/productos/'), api('/api/v1/pedidos/')
-    ]);
-    const activos    = clientes.filter(c=>c.estado==='activo').length;
-    const pendientes = pedidos.filter(p=>p.estado==='pendiente').length;
-    const entregados = pedidos.filter(p=>p.estado==='entregado').length;
-    const facturado  = pedidos.filter(p=>p.estado==='entregado').reduce((s,p)=>s+parseFloat(p.total||0),0);
-
+  try{
+    const [clientes,productos,pedidos]=await Promise.all([api('/api/v1/clientes/'),api('/api/v1/productos/'),api('/api/v1/pedidos/')]);
+    const activos=clientes.filter(c=>c.estado==='activo').length;
+    const pendientes=pedidos.filter(p=>p.estado==='pendiente').length;
+    const entregados=pedidos.filter(p=>p.estado==='entregado').length;
+    const facturado=pedidos.filter(p=>p.estado==='entregado').reduce((s,p)=>s+parseFloat(p.total||0),0);
     setContent(`
       <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
         <div class="stat-card"><div class="stat-label">Clientes activos</div><div class="stat-value" style="color:var(--accent)">${activos}</div><div class="stat-sub">${clientes.length} total</div></div>
@@ -296,54 +237,53 @@ async function pgDashboard(){
         <div class="stat-card"><div class="stat-label">Total facturado</div><div class="stat-value" style="color:var(--accent2)">$${facturado.toLocaleString('es-AR',{minimumFractionDigits:0})}</div><div class="stat-sub">pedidos entregados</div></div>
       </div>
       <div class="section-header"><h3>Últimos pedidos</h3></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
-          <tbody>
-            ${pedidos.slice(0,10).map(p=>`
-              <tr>
-                <td class="mono">${p.id.slice(0,8)}…</td>
-                <td>${p.fecha_pedido}</td>
-                <td class="mono">$${parseFloat(p.total).toLocaleString('es-AR')}</td>
-                <td>${badge(p.estado)}</td>
-              </tr>`).join('') || '<tr><td colspan="4" class="empty">Sin pedidos aún</td></tr>'}
-          </tbody>
-        </table>
-      </div>`);
-  } catch(e){ setContent(`<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`); }
+      <div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+        <tbody>
+          ${pedidos.slice(0,10).map(p=>`<tr><td class="mono">${p.id.slice(0,8)}…</td><td>${p.fecha_pedido}</td><td class="mono">$${parseFloat(p.total).toLocaleString('es-AR')}</td><td>${badge(p.estado)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin pedidos aún</td></tr>'}
+        </tbody>
+      </table></div>`);
+  }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
-// ── CLIENTES ─────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  CLIENTES
+// ══════════════════════════════════════════════════════════════
 async function pgClientes(){
-  document.getElementById('topbar-actions').innerHTML =
-    `<button class="btn btn-primary" onclick="modalNuevoCliente()">+ Nuevo cliente</button>`;
-  try {
-    const rows = await api('/api/v1/clientes/');
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevoCliente()">+ Nuevo cliente</button>`;
+  try{
+    const [rows,listas]=await Promise.all([api('/api/v1/clientes/'),api('/api/v1/precios/')]);
+    const listaMap={};listas.forEach(l=>listaMap[l.id]=l);
     setContent(`
       <div class="section-header">
         <h3>${rows.length} clientes</h3>
         <input class="search-input" placeholder="Buscar…" oninput="filtrar(this.value,'tb-clientes')"/>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Razón social</th><th>CUIT</th><th>Teléfono</th><th>Localidad</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Razón social</th><th>CUIT</th><th>Teléfono</th><th>Localidad</th><th>Lista de precios</th><th>Estado</th><th></th></tr></thead>
         <tbody id="tb-clientes">
-          ${rows.map(c=>`
-            <tr>
+          ${rows.map(c=>{
+            const lista=listaMap[c.lista_precios_id];
+            return `<tr>
               <td><strong>${c.razon_social}</strong></td>
               <td class="mono">${c.cuit||'—'}</td>
               <td class="mono">${c.telefono||'—'}</td>
               <td>${c.localidad||'—'}</td>
+              <td>${lista?`<span class="badge b-${lista.tipo}">${lista.nombre}</span>`:`<span class="muted">—</span>`}</td>
               <td>${badge(c.estado)}</td>
-              <td><button class="btn btn-ghost btn-sm" onclick="verCliente('${c.id}')">Ver</button></td>
-            </tr>`).join('')||'<tr><td colspan="6" class="empty">Sin clientes</td></tr>'}
+              <td style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" onclick="modalEditarCliente('${c.id}')">Editar</button>
+                <button class="btn btn-ghost btn-sm" onclick="verCliente('${c.id}')">Ver</button>
+              </td>
+            </tr>`;
+          }).join('')||'<tr><td colspan="7" class="empty">Sin clientes</td></tr>'}
         </tbody>
       </table></div>`);
-  } catch(e){ setContent(`<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`); }
+  }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
 async function modalNuevoCliente(){
-  let listas=[];
-  try{ listas = await api('/api/v1/precios/'); }catch(e){}
+  let listas=[];try{listas=await api('/api/v1/precios/');}catch(e){}
   openModal(`
     <h3>Nuevo cliente</h3>
     <div class="form-row">
@@ -381,26 +321,67 @@ async function modalNuevoCliente(){
 }
 
 async function crearCliente(){
-  const b = {
-    razon_social:    document.getElementById('f-rs').value,
-    cuit:            document.getElementById('f-cuit').value||null,
-    telefono:        document.getElementById('f-tel').value||null,
-    email:           document.getElementById('f-email').value||null,
-    direccion:       document.getElementById('f-dir').value||null,
-    localidad:       document.getElementById('f-loc').value||null,
-    condicion_iva:   document.getElementById('f-iva').value,
-    lista_precios_id:document.getElementById('f-lista').value||null,
-  };
-  if(!b.razon_social){ toast('La razón social es obligatoria','err'); return; }
+  const b={razon_social:document.getElementById('f-rs').value,cuit:document.getElementById('f-cuit').value||null,telefono:document.getElementById('f-tel').value||null,email:document.getElementById('f-email').value||null,direccion:document.getElementById('f-dir').value||null,localidad:document.getElementById('f-loc').value||null,condicion_iva:document.getElementById('f-iva').value,lista_precios_id:document.getElementById('f-lista').value||null};
+  if(!b.razon_social){toast('La razón social es obligatoria','err');return;}
+  try{await api('/api/v1/clientes/',{method:'POST',body:JSON.stringify(b)});toast('Cliente creado');closeModal();pgClientes();}catch(e){toast(e.message,'err');}
+}
+
+async function modalEditarCliente(id){
   try{
-    await api('/api/v1/clientes/',{method:'POST',body:JSON.stringify(b)});
-    toast('Cliente creado'); closeModal(); pgClientes();
-  }catch(e){ toast(e.message,'err'); }
+    const [c,listas]=await Promise.all([api(`/api/v1/clientes/${id}`),api('/api/v1/precios/')]);
+    openModal(`
+      <h3>Editar cliente</h3>
+      <div class="form-row">
+        <div class="field"><label>Razón social *</label><input id="fe-rs" value="${c.razon_social}"/></div>
+        <div class="field"><label>CUIT</label><input id="fe-cuit" value="${c.cuit||''}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Teléfono</label><input id="fe-tel" value="${c.telefono||''}"/></div>
+        <div class="field"><label>Email</label><input id="fe-email" type="email" value="${c.email||''}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Dirección</label><input id="fe-dir" value="${c.direccion||''}"/></div>
+        <div class="field"><label>Localidad</label><input id="fe-loc" value="${c.localidad||''}"/></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Condición IVA</label>
+          <select id="fe-iva">
+            <option value="consumidor_final" ${c.condicion_iva==='consumidor_final'?'selected':''}>Consumidor final</option>
+            <option value="responsable_inscripto" ${c.condicion_iva==='responsable_inscripto'?'selected':''}>Responsable inscripto</option>
+            <option value="monotributo" ${c.condicion_iva==='monotributo'?'selected':''}>Monotributo</option>
+            <option value="exento" ${c.condicion_iva==='exento'?'selected':''}>Exento</option>
+          </select>
+        </div>
+        <div class="field"><label>Lista de precios</label>
+          <select id="fe-lista">
+            <option value="">Sin lista</option>
+            ${listas.map(l=>`<option value="${l.id}" ${c.lista_precios_id===l.id?'selected':''}>${l.nombre} (${l.tipo})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Estado</label>
+        <select id="fe-estado">
+          <option value="activo" ${c.estado==='activo'?'selected':''}>Activo</option>
+          <option value="inactivo" ${c.estado==='inactivo'?'selected':''}>Inactivo</option>
+          <option value="bloqueado" ${c.estado==='bloqueado'?'selected':''}>Bloqueado</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarCliente('${id}')">Guardar cambios</button>
+      </div>`);
+  }catch(e){toast(e.message,'err');}
+}
+
+async function guardarCliente(id){
+  const b={razon_social:document.getElementById('fe-rs').value,cuit:document.getElementById('fe-cuit').value||null,telefono:document.getElementById('fe-tel').value||null,email:document.getElementById('fe-email').value||null,direccion:document.getElementById('fe-dir').value||null,localidad:document.getElementById('fe-loc').value||null,condicion_iva:document.getElementById('fe-iva').value,lista_precios_id:document.getElementById('fe-lista').value||null,estado:document.getElementById('fe-estado').value};
+  try{await api(`/api/v1/clientes/${id}`,{method:'PATCH',body:JSON.stringify(b)});toast('Cliente actualizado');closeModal();pgClientes();}catch(e){toast(e.message,'err');}
 }
 
 async function verCliente(id){
   try{
-    const c = await api(`/api/v1/clientes/${id}`);
+    const [c,listas]=await Promise.all([api(`/api/v1/clientes/${id}`),api('/api/v1/precios/')]);
+    const lista=listas.find(l=>l.id===c.lista_precios_id);
     openModal(`
       <h3>${c.razon_social}</h3>
       <div class="detail-grid">
@@ -410,63 +391,52 @@ async function verCliente(id){
         <div class="detail-item"><span>Email</span>${c.email||'—'}</div>
         <div class="detail-item"><span>Dirección</span>${c.direccion||'—'}</div>
         <div class="detail-item"><span>Localidad</span>${c.localidad||'—'}</div>
+        <div class="detail-item"><span>Lista de precios</span>${lista?`<span class="badge b-${lista.tipo}">${lista.nombre}</span>`:'<span style="color:var(--warn)">Sin lista asignada</span>'}</div>
         <div class="detail-item"><span>Estado</span>${badge(c.estado)}</div>
-        <div class="detail-item"><span>Alta</span>${c.created_at?.slice(0,10)||'—'}</div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
-        <button class="btn btn-danger btn-sm" onclick="cambiarEstadoCliente('${c.id}','${c.estado==='activo'?'inactivo':'activo'}')">
-          ${c.estado==='activo'?'Desactivar':'Activar'}
-        </button>
+        <button class="btn btn-ghost btn-sm" onclick="modalEditarCliente('${c.id}')">Editar</button>
       </div>`);
-  }catch(e){ toast(e.message,'err'); }
+  }catch(e){toast(e.message,'err');}
 }
 
-async function cambiarEstadoCliente(id, estado){
-  try{
-    await api(`/api/v1/clientes/${id}`,{method:'PATCH',body:JSON.stringify({estado})});
-    toast(`Cliente ${estado}`); closeModal(); pgClientes();
-  }catch(e){ toast(e.message,'err'); }
-}
-
-// ── PRODUCTOS ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  PRODUCTOS
+// ══════════════════════════════════════════════════════════════
 async function pgProductos(){
-  document.getElementById('topbar-actions').innerHTML =
-    `<button class="btn btn-primary" onclick="modalNuevoProducto()">+ Nuevo producto</button>`;
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevoProducto()">+ Nuevo producto</button>`;
   try{
-    const rows = await api('/api/v1/productos/?solo_activos=false');
+    const rows=await api('/api/v1/productos/?solo_activos=false');
     setContent(`
       <div class="section-header">
         <h3>${rows.length} productos</h3>
         <input class="search-input" placeholder="Buscar…" oninput="filtrar(this.value,'tb-prod')"/>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Nombre</th><th>Descripción</th><th>Unidad</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Descripción</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
         <tbody id="tb-prod">
-          ${rows.map(p=>`
-            <tr>
-              <td><strong>${p.nombre}</strong></td>
-              <td class="muted">${p.descripcion||'—'}</td>
-              <td class="mono">${p.unidad_medida}</td>
-              <td>${badge(p.activo?'activo':'inactivo')}</td>
-            </tr>`).join('')||'<tr><td colspan="4" class="empty">Sin productos</td></tr>'}
+          ${rows.map(p=>`<tr>
+            <td><strong>${p.nombre}</strong></td>
+            <td class="muted">${p.descripcion||'—'}</td>
+            <td class="mono">${p.unidad_medida}</td>
+            <td>${badge(p.activo?'activo':'inactivo')}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="modalEditarProducto('${p.id}','${p.nombre.replace(/'/g,"\\'")}','${(p.descripcion||'').replace(/'/g,"\\'")}','${p.unidad_medida}',${p.activo})">Editar</button></td>
+          </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin productos</td></tr>'}
         </tbody>
       </table></div>`);
-  }catch(e){ setContent(`<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`); }
+  }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
 async function modalNuevoProducto(){
   openModal(`
     <h3>Nuevo producto</h3>
-    <div class="field"><label>Nombre *</label><input id="fp-nombre" placeholder="Ej: Bidón 20L"/></div>
+    <div class="field"><label>Nombre *</label><input id="fp-nombre" placeholder="Ej: Chorizo del Bueno"/></div>
     <div class="field"><label>Descripción</label><textarea id="fp-desc" rows="2"></textarea></div>
     <div class="field"><label>Unidad de medida</label>
       <select id="fp-unidad">
-        <option value="unidad">Unidad</option>
-        <option value="kg">Kg</option>
-        <option value="litro">Litro</option>
-        <option value="docena">Docena</option>
-        <option value="caja">Caja</option>
+        <option value="unidad">Unidad</option><option value="kg">Kg</option>
+        <option value="litro">Litro</option><option value="docena">Docena</option><option value="caja">Caja</option>
       </select>
     </div>
     <div class="modal-footer">
@@ -476,71 +446,91 @@ async function modalNuevoProducto(){
 }
 
 async function crearProducto(){
-  const b = {
-    nombre: document.getElementById('fp-nombre').value,
-    descripcion: document.getElementById('fp-desc').value||null,
-    unidad_medida: document.getElementById('fp-unidad').value,
-  };
-  if(!b.nombre){ toast('El nombre es obligatorio','err'); return; }
-  try{
-    await api('/api/v1/productos/',{method:'POST',body:JSON.stringify(b)});
-    toast('Producto creado'); closeModal(); pgProductos();
-  }catch(e){ toast(e.message,'err'); }
+  const b={nombre:document.getElementById('fp-nombre').value,descripcion:document.getElementById('fp-desc').value||null,unidad_medida:document.getElementById('fp-unidad').value};
+  if(!b.nombre){toast('El nombre es obligatorio','err');return;}
+  try{await api('/api/v1/productos/',{method:'POST',body:JSON.stringify(b)});toast('Producto creado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
 }
 
-// ── PRECIOS ──────────────────────────────────────────────────
+async function modalEditarProducto(id,nombre,desc,unidad,activo){
+  openModal(`
+    <h3>Editar producto</h3>
+    <div class="field"><label>Nombre *</label><input id="fep-nombre" value="${nombre}"/></div>
+    <div class="field"><label>Descripción</label><textarea id="fep-desc" rows="2">${desc}</textarea></div>
+    <div class="field"><label>Unidad de medida</label>
+      <select id="fep-unidad">
+        <option value="unidad" ${unidad==='unidad'?'selected':''}>Unidad</option>
+        <option value="kg" ${unidad==='kg'?'selected':''}>Kg</option>
+        <option value="litro" ${unidad==='litro'?'selected':''}>Litro</option>
+        <option value="docena" ${unidad==='docena'?'selected':''}>Docena</option>
+        <option value="caja" ${unidad==='caja'?'selected':''}>Caja</option>
+      </select>
+    </div>
+    <div class="field"><label>Estado</label>
+      <select id="fep-activo">
+        <option value="true" ${activo?'selected':''}>Activo</option>
+        <option value="false" ${!activo?'selected':''}>Inactivo</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarProducto('${id}')">Guardar</button>
+    </div>`);
+}
+
+async function guardarProducto(id){
+  const b={nombre:document.getElementById('fep-nombre').value,descripcion:document.getElementById('fep-desc').value||null,unidad_medida:document.getElementById('fep-unidad').value,activo:document.getElementById('fep-activo').value==='true'};
+  try{await api(`/api/v1/productos/${id}`,{method:'PATCH',body:JSON.stringify(b)});toast('Producto actualizado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PRECIOS
+// ══════════════════════════════════════════════════════════════
 async function pgPrecios(){
-  document.getElementById('topbar-actions').innerHTML =
-    `<button class="btn btn-primary" onclick="modalNuevaLista()">+ Nueva lista</button>`;
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevaLista()">+ Nueva lista</button>`;
   try{
-    const listas = await api('/api/v1/precios/');
+    const listas=await api('/api/v1/precios/');
     setContent(`
       <div class="section-header"><h3>${listas.length} listas de precios</h3></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
         ${listas.map(l=>`
-          <div class="stat-card" style="cursor:pointer" onclick="verLista('${l.id}','${l.nombre}')">
+          <div class="stat-card" style="cursor:pointer" onclick="verLista('${l.id}','${l.nombre}','${l.tipo}')">
             <div class="stat-label">${l.tipo}</div>
             <div style="font-size:16px;font-weight:600;margin:6px 0">${l.nombre}</div>
             ${badge(l.activo?'activo':'inactivo')}
             <div style="margin-top:12px;font-size:12px;color:var(--accent)">Editar precios →</div>
           </div>`).join('')||'<div class="empty">Sin listas</div>'}
       </div>`);
-  }catch(e){ setContent(`<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`); }
+  }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
-async function verLista(id, nombre){
+async function verLista(id,nombre,tipo){
   try{
-    const [lista, productos] = await Promise.all([api(`/api/v1/precios/${id}`), api('/api/v1/productos/')]);
-    const pm = {};
-    lista.items.forEach(i=>pm[i.producto_id]=i.precio);
+    const [lista,productos]=await Promise.all([api(`/api/v1/precios/${id}`),api('/api/v1/productos/')]);
+    const pm={};lista.items.forEach(i=>pm[i.producto_id]=i.precio);
     openModal(`
-      <h3>${nombre}</h3>
-      <p class="muted" style="font-size:12px;margin-bottom:14px">Editá los precios directamente — se guardan al cambiar el campo</p>
-      <div class="table-wrap" style="max-height:340px;overflow-y:auto"><table>
+      <h3>${nombre} <span class="badge b-${tipo}" style="vertical-align:middle">${tipo}</span></h3>
+      <p class="muted" style="font-size:12px;margin-bottom:14px">Los precios se guardan al salir del campo</p>
+      <div class="table-wrap" style="max-height:360px;overflow-y:auto"><table>
         <thead><tr><th>Producto</th><th>Unidad</th><th>Precio $</th></tr></thead>
         <tbody>
-          ${productos.map(p=>`
-            <tr>
-              <td><strong>${p.nombre}</strong></td>
-              <td class="mono muted">${p.unidad_medida}</td>
-              <td><input type="number" step="0.01" min="0" value="${pm[p.id]||''}" placeholder="—"
-                style="width:110px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"
-                onchange="setPrecio('${id}','${p.id}',this.value)"
-                onfocus="this.style.borderColor='var(--accent)'"
-                onblur="this.style.borderColor='var(--border)'"/></td>
-            </tr>`).join('')}
+          ${productos.map(p=>`<tr>
+            <td><strong>${p.nombre}</strong></td>
+            <td class="mono muted">${p.unidad_medida}</td>
+            <td><input type="number" step="0.01" min="0" value="${pm[p.id]||''}" placeholder="Sin precio"
+              style="width:130px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"
+              onchange="setPrecio('${id}','${p.id}',this.value)"
+              onfocus="this.style.borderColor='var(--accent)'"
+              onblur="this.style.borderColor='var(--border)'"/></td>
+          </tr>`).join('')}
         </tbody>
       </table></div>
       <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Cerrar</button></div>`);
-  }catch(e){ toast(e.message,'err'); }
+  }catch(e){toast(e.message,'err');}
 }
 
-async function setPrecio(listaId, productoId, precio){
-  if(!precio) return;
-  try{
-    await api(`/api/v1/precios/${listaId}/items`,{method:'PUT',body:JSON.stringify({producto_id:productoId,precio:parseFloat(precio)})});
-    toast('Precio guardado');
-  }catch(e){ toast(e.message,'err'); }
+async function setPrecio(listaId,productoId,precio){
+  if(!precio)return;
+  try{await api(`/api/v1/precios/${listaId}/items`,{method:'PUT',body:JSON.stringify({producto_id:productoId,precio:parseFloat(precio)})});toast('Precio guardado');}catch(e){toast(e.message,'err');}
 }
 
 async function modalNuevaLista(){
@@ -548,11 +538,7 @@ async function modalNuevaLista(){
     <h3>Nueva lista de precios</h3>
     <div class="field"><label>Nombre *</label><input id="fl-nombre" placeholder="Ej: Mayorista Córdoba"/></div>
     <div class="field"><label>Tipo</label>
-      <select id="fl-tipo">
-        <option value="minorista">Minorista</option>
-        <option value="mayorista">Mayorista</option>
-        <option value="especial">Especial</option>
-      </select>
+      <select id="fl-tipo"><option value="minorista">Minorista</option><option value="mayorista">Mayorista</option><option value="especial">Especial</option></select>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
@@ -561,55 +547,47 @@ async function modalNuevaLista(){
 }
 
 async function crearLista(){
-  const b={nombre:document.getElementById('fl-nombre').value, tipo:document.getElementById('fl-tipo').value};
-  if(!b.nombre){ toast('El nombre es obligatorio','err'); return; }
-  try{
-    await api('/api/v1/precios/',{method:'POST',body:JSON.stringify(b)});
-    toast('Lista creada'); closeModal(); pgPrecios();
-  }catch(e){ toast(e.message,'err'); }
+  const b={nombre:document.getElementById('fl-nombre').value,tipo:document.getElementById('fl-tipo').value};
+  if(!b.nombre){toast('El nombre es obligatorio','err');return;}
+  try{await api('/api/v1/precios/',{method:'POST',body:JSON.stringify(b)});toast('Lista creada');closeModal();pgPrecios();}catch(e){toast(e.message,'err');}
 }
 
-// ── PEDIDOS ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  PEDIDOS
+// ══════════════════════════════════════════════════════════════
 async function pgPedidos(){
-  document.getElementById('topbar-actions').innerHTML =
-    `<button class="btn btn-primary" onclick="modalNuevoPedido()">+ Nuevo pedido</button>`;
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevoPedido()">+ Nuevo pedido</button>`;
   try{
-    const pedidos = await api('/api/v1/pedidos/');
-    const estados = ['pendiente','en_ruta','entregado','cancelado','no_entregado'];
-    const total   = pedidos.reduce((s,p)=>s+parseFloat(p.total||0),0);
+    const pedidos=await api('/api/v1/pedidos/');
+    const estados=['pendiente','en_ruta','entregado','cancelado','no_entregado'];
+    const total=pedidos.reduce((s,p)=>s+parseFloat(p.total||0),0);
     setContent(`
       <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
-        ${estados.map(e=>`
-          <div class="stat-card">
-            <div class="stat-label">${e.replace('_',' ')}</div>
-            <div class="stat-value" style="font-size:22px">${pedidos.filter(p=>p.estado===e).length}</div>
-          </div>`).join('')}
+        ${estados.map(e=>`<div class="stat-card"><div class="stat-label">${e.replace('_',' ')}</div><div class="stat-value" style="font-size:22px">${pedidos.filter(p=>p.estado===e).length}</div></div>`).join('')}
       </div>
       <div class="section-header">
         <h3>${pedidos.length} pedidos · $${total.toLocaleString('es-AR',{minimumFractionDigits:0})} total</h3>
         <input class="search-input" placeholder="Buscar…" oninput="filtrar(this.value,'tb-ped')"/>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>ID</th><th>Fecha pedido</th><th>Entrega</th><th>Items</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>ID</th><th>Fecha pedido</th><th>Entrega</th><th>Total</th><th>Estado</th><th></th></tr></thead>
         <tbody id="tb-ped">
-          ${pedidos.map(p=>`
-            <tr>
-              <td class="mono">${p.id.slice(0,8)}…</td>
-              <td>${p.fecha_pedido}</td>
-              <td>${p.fecha_entrega||'—'}</td>
-              <td class="muted" style="font-size:12px">${p.items?.length??'—'} items</td>
-              <td class="mono">$${parseFloat(p.total).toLocaleString('es-AR')}</td>
-              <td>${badge(p.estado)}</td>
-              <td><button class="btn btn-ghost btn-sm" onclick="verPedido('${p.id}')">Ver</button></td>
-            </tr>`).join('')||'<tr><td colspan="7" class="empty">Sin pedidos</td></tr>'}
+          ${pedidos.map(p=>`<tr>
+            <td class="mono">${p.id.slice(0,8)}…</td>
+            <td>${p.fecha_pedido}</td>
+            <td>${p.fecha_entrega||'—'}</td>
+            <td class="mono">$${parseFloat(p.total).toLocaleString('es-AR')}</td>
+            <td>${badge(p.estado)}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="verPedido('${p.id}')">Ver</button></td>
+          </tr>`).join('')||'<tr><td colspan="6" class="empty">Sin pedidos</td></tr>'}
         </tbody>
       </table></div>`);
-  }catch(e){ setContent(`<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`); }
+  }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
 async function verPedido(id){
   try{
-    const p = await api(`/api/v1/pedidos/${id}`);
+    const p=await api(`/api/v1/pedidos/${id}`);
     openModal(`
       <h3>Pedido <span class="mono muted" style="font-size:12px">${p.id.slice(0,8)}…</span></h3>
       <div class="detail-grid" style="margin-bottom:16px">
@@ -623,50 +601,37 @@ async function verPedido(id){
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.7px">Items del pedido</div>
       <div class="table-wrap"><table>
         <thead><tr><th>Producto ID</th><th>Cantidad</th><th>Precio unit.</th><th>Subtotal</th></tr></thead>
-        <tbody>
-          ${p.items.map(i=>`
-            <tr>
-              <td class="mono muted" style="font-size:11px">${i.producto_id.slice(0,12)}…</td>
-              <td>${i.cantidad}</td>
-              <td class="mono">$${parseFloat(i.precio_unitario).toLocaleString('es-AR')}</td>
-              <td class="mono">$${parseFloat(i.subtotal).toLocaleString('es-AR')}</td>
-            </tr>`).join('')}
-        </tbody>
+        <tbody>${p.items.map(i=>`<tr>
+          <td class="mono muted" style="font-size:11px">${i.producto_id.slice(0,12)}…</td>
+          <td>${i.cantidad}</td>
+          <td class="mono">$${parseFloat(i.precio_unitario).toLocaleString('es-AR')}</td>
+          <td class="mono">$${parseFloat(i.subtotal).toLocaleString('es-AR')}</td>
+        </tr>`).join('')}</tbody>
       </table></div>
       <div class="modal-footer">
         <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
-        ${p.estado==='pendiente'?`
-          <button class="btn btn-success btn-sm" onclick="patchPedido('${p.id}','en_ruta')">→ En ruta</button>
-          <button class="btn btn-danger btn-sm" onclick="patchPedido('${p.id}','cancelado')">Cancelar</button>`:''}
-        ${p.estado==='en_ruta'?`
-          <button class="btn btn-success btn-sm" onclick="patchPedido('${p.id}','entregado')">✓ Entregado</button>
-          <button class="btn btn-danger btn-sm" onclick="patchPedido('${p.id}','no_entregado')">No entregado</button>`:''}
+        ${p.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="patchPedido('${p.id}','en_ruta')">→ En ruta</button><button class="btn btn-danger btn-sm" onclick="patchPedido('${p.id}','cancelado')">Cancelar</button>`:''}
+        ${p.estado==='en_ruta'?`<button class="btn btn-success btn-sm" onclick="patchPedido('${p.id}','entregado')">✓ Entregado</button><button class="btn btn-danger btn-sm" onclick="patchPedido('${p.id}','no_entregado')">No entregado</button>`:''}
       </div>`);
-  }catch(e){ toast(e.message,'err'); }
+  }catch(e){toast(e.message,'err');}
 }
 
-async function patchPedido(id, estado){
-  try{
-    await api(`/api/v1/pedidos/${id}`,{method:'PATCH',body:JSON.stringify({estado})});
-    toast(`Pedido → ${estado}`); closeModal(); pgPedidos();
-  }catch(e){ toast(e.message,'err'); }
+async function patchPedido(id,estado){
+  try{await api(`/api/v1/pedidos/${id}`,{method:'PATCH',body:JSON.stringify({estado})});toast(`Pedido → ${estado}`);closeModal();pgPedidos();}catch(e){toast(e.message,'err');}
 }
+
+// ── NUEVO PEDIDO con autocompletado de precios ────────────────
+let _itemIdx=0;
+window._pProds=[];window._pPrecioMap={};
 
 async function modalNuevoPedido(){
-  let clientes=[], productos=[], listas=[];
-  try{
-    [clientes, productos, listas] = await Promise.all([
-      api('/api/v1/clientes/'),
-      api('/api/v1/productos/'),
-      api('/api/v1/precios/'),
-    ]);
-  }catch(e){}
-  window._pProds    = productos;
-  window._pListas   = listas;
-  window._pClientes = clientes.filter(c=>c.estado==='activo');
-  // mapa clienteId → lista completa con items
-  window._pPrecioMap = {};
-  _itemIdx = 0;
+  _itemIdx=0;
+  let clientes=[],productos=[],listas=[];
+  try{[clientes,productos,listas]=await Promise.all([api('/api/v1/clientes/'),api('/api/v1/productos/'),api('/api/v1/precios/')]);}catch(e){}
+  window._pProds=productos;
+  window._pListas=listas;
+  window._pClientes=clientes.filter(c=>c.estado==='activo');
+  window._pPrecioMap={};
 
   openModal(`
     <h3>Nuevo pedido</h3>
@@ -678,150 +643,109 @@ async function modalNuevoPedido(){
         </select>
       </div>
       <div class="field"><label>Lista de precios asignada</label>
-        <div id="np-lista-info" style="padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:13px;color:var(--muted);min-height:38px">
-          — seleccioná un cliente
-        </div>
+        <div id="np-lista-info" class="lista-info-box" style="color:var(--muted)">— seleccioná un cliente</div>
       </div>
     </div>
     <div class="field"><label>Fecha de entrega</label><input id="np-fecha" type="date"/></div>
     <div class="field"><label>Observaciones</label><textarea id="np-obs" rows="2"></textarea></div>
     <div class="divider"></div>
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:6px">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Producto</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Cantidad</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Precio $</div>
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">Subtotal</div>
+    <div class="items-grid-header">
+      <div>Producto</div><div>Cantidad</div><div>Precio $</div><div>Subtotal</div><div></div>
     </div>
     <div id="np-items-wrap"></div>
-    <button class="btn btn-ghost" style="width:100%;margin-bottom:4px" onclick="addPedidoItem()">+ Agregar producto</button>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:4px" onclick="addItem()">+ Agregar producto</button>
     <div class="divider"></div>
-    <div style="text-align:right;font-size:14px;font-weight:600;font-family:var(--mono)">
-      Total: <span id="np-total" style="color:var(--accent2)">$0</span>
-    </div>
+    <div class="total-row">Total: <span id="np-total" style="color:var(--accent2)">$0</span></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="crearPedido()">Crear pedido</button>
     </div>`);
-  addPedidoItem();
+  addItem();
 }
 
 async function onClienteChange(clienteId){
-  const infoEl = document.getElementById('np-lista-info');
-  if(!clienteId){ infoEl.textContent = '— seleccioná un cliente'; infoEl.style.color='var(--muted)'; return; }
-
-  // Obtener datos del cliente seleccionado
-  const cliente = window._pClientes.find(c=>c.id===clienteId);
-  const listaId = cliente?.lista_precios_id;
-
+  const infoEl=document.getElementById('np-lista-info');
+  if(!clienteId){infoEl.textContent='— seleccioná un cliente';infoEl.style.color='var(--muted)';window._pPrecioMap={};return;}
+  const cliente=window._pClientes.find(c=>c.id===clienteId);
+  const listaId=cliente?.lista_precios_id;
   if(!listaId){
-    infoEl.innerHTML = '<span style="color:var(--warn)">⚠ Sin lista asignada — deberás ingresar precios manualmente</span>';
-    window._pPrecioMap = {};
-    return;
+    infoEl.innerHTML='<span style="color:var(--warn)">⚠ Sin lista — ingresá precios manualmente</span>';
+    window._pPrecioMap={};return;
   }
-
-  // Obtener lista con items
   try{
-    const lista = await api(`/api/v1/precios/${listaId}`);
-    const listas = window._pListas||[];
-    const listaMeta = listas.find(l=>l.id===listaId);
-    infoEl.innerHTML = `<span style="color:var(--accent2)">✓</span> <strong>${lista.nombre}</strong> <span class="badge b-${listaMeta?.tipo||'minorista'}" style="margin-left:6px">${listaMeta?.tipo||''}</span> — ${lista.items.length} producto(s) con precio`;
-    infoEl.style.color = 'var(--text)';
-
-    // Construir mapa productoId → precio
-    window._pPrecioMap = {};
-    lista.items.forEach(item => window._pPrecioMap[item.producto_id] = item.precio);
-
-    // Actualizar precios en los items ya cargados
-    for(let i=0; i<_itemIdx; i++){
-      const pidEl = document.getElementById(`pi-p-${i}`);
-      if(pidEl?.value) autocompletarPrecio(i, pidEl.value);
+    const lista=await api(`/api/v1/precios/${listaId}`);
+    const meta=window._pListas.find(l=>l.id===listaId);
+    infoEl.innerHTML=`<span style="color:var(--accent2)">✓</span> <strong>${lista.nombre}</strong> <span class="badge b-${meta?.tipo||'minorista'}" style="margin-left:6px">${meta?.tipo||''}</span> — ${lista.items.length} prod. con precio`;
+    window._pPrecioMap={};
+    lista.items.forEach(i=>window._pPrecioMap[i.producto_id]=i.precio);
+    // Actualizar precios de los items ya agregados
+    for(let i=0;i<_itemIdx;i++){
+      const pidEl=document.getElementById(`pi-p-${i}`);
+      if(pidEl?.value)autoFillPrecio(i,pidEl.value);
     }
-  }catch(e){
-    infoEl.innerHTML = '<span style="color:var(--warn)">Error cargando lista de precios</span>';
-  }
+  }catch(e){infoEl.innerHTML='<span style="color:var(--warn)">Error cargando lista</span>';}
 }
 
-function autocompletarPrecio(idx, productoId){
-  const precioEl = document.getElementById(`pi-pr-${idx}`);
-  if(!precioEl) return;
-  const precio = window._pPrecioMap?.[productoId];
-  if(precio){
-    precioEl.value = precio;
-    precioEl.style.borderColor = 'var(--accent2)';
-    precioEl.title = 'Precio de la lista del cliente';
-  } else {
-    precioEl.value = '';
-    precioEl.style.borderColor = 'var(--border)';
-  }
-  recalcularTotal();
+function autoFillPrecio(idx,productoId){
+  const precioEl=document.getElementById(`pi-pr-${idx}`);
+  if(!precioEl)return;
+  const precio=window._pPrecioMap[productoId];
+  if(precio){precioEl.value=precio;precioEl.style.borderColor='var(--accent2)';}
+  else{precioEl.value='';precioEl.style.borderColor='var(--border)';}
+  recalcTotal();
 }
 
-function recalcularTotal(){
-  let total = 0;
-  for(let i=0; i<_itemIdx; i++){
-    const cant  = parseFloat(document.getElementById(`pi-c-${i}`)?.value||0);
-    const precio = parseFloat(document.getElementById(`pi-pr-${i}`)?.value||0);
-    const sub   = cant * precio;
-    total += sub;
-    const subEl = document.getElementById(`pi-sub-${i}`);
-    if(subEl) subEl.textContent = sub > 0 ? `$${sub.toLocaleString('es-AR',{minimumFractionDigits:2})}` : '—';
+function recalcTotal(){
+  let total=0;
+  for(let i=0;i<_itemIdx;i++){
+    const cant=parseFloat(document.getElementById(`pi-c-${i}`)?.value||0);
+    const precio=parseFloat(document.getElementById(`pi-pr-${i}`)?.value||0);
+    const sub=cant*precio;total+=sub;
+    const subEl=document.getElementById(`pi-sub-${i}`);
+    if(subEl)subEl.textContent=sub>0?`$${sub.toLocaleString('es-AR',{minimumFractionDigits:2})}`:'—';
   }
-  const totalEl = document.getElementById('np-total');
-  if(totalEl) totalEl.textContent = `$${total.toLocaleString('es-AR',{minimumFractionDigits:2})}`;
+  const el=document.getElementById('np-total');
+  if(el)el.textContent=`$${total.toLocaleString('es-AR',{minimumFractionDigits:2})}`;
 }
 
-let _itemIdx = 0;
-function addPedidoItem(){
-  const prods = window._pProds||[];
-  const i = _itemIdx++;
-  const d = document.createElement('div');
-  d.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;align-items:center';
-  d.id = `pi-row-${i}`;
-  d.innerHTML = `
-    <select id="pi-p-${i}" onchange="autocompletarPrecio(${i}, this.value)"
-      style="padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none">
+function addItem(){
+  const prods=window._pProds||[];
+  const i=_itemIdx++;
+  const d=document.createElement('div');
+  d.className='item-row';d.id=`pi-row-${i}`;
+  d.innerHTML=`
+    <select id="pi-p-${i}" onchange="autoFillPrecio(${i},this.value)">
       <option value="">Producto…</option>
-      ${prods.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}
+      ${prods.map(p=>`<option value="${p.id}">${p.nombre} (${p.unidad_medida})</option>`).join('')}
     </select>
-    <input id="pi-c-${i}" type="number" step="0.001" min="0.001" placeholder="Cant."
-      style="padding:8px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font);font-size:13px;outline:none"
-      oninput="recalcularTotal()"/>
-    <input id="pi-pr-${i}" type="number" step="0.01" min="0" placeholder="Precio"
-      style="padding:8px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none"
-      oninput="recalcularTotal()"/>
-    <span id="pi-sub-${i}" style="font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right">—</span>`;
+    <input id="pi-c-${i}" type="number" step="0.001" min="0.001" placeholder="Cantidad" oninput="recalcTotal()"/>
+    <input id="pi-pr-${i}" type="number" step="0.01" min="0" placeholder="Precio" oninput="recalcTotal()"/>
+    <span id="pi-sub-${i}" class="subtotal">—</span>
+    <button class="btn-remove" onclick="removeItem(${i})">✕</button>`;
   document.getElementById('np-items-wrap').appendChild(d);
 }
 
-async function crearPedido(){
-  const cliente_id = document.getElementById('np-cli').value;
-  if(!cliente_id){ toast('Seleccioná un cliente','err'); return; }
-  const items=[];
-  for(let i=0;i<_itemIdx;i++){
-    const pid  = document.getElementById(`pi-p-${i}`)?.value;
-    const cant = document.getElementById(`pi-c-${i}`)?.value;
-    const pr   = document.getElementById(`pi-pr-${i}`)?.value;
-    if(pid&&cant) items.push({
-      producto_id: pid,
-      cantidad: parseFloat(cant),
-      ...(pr ? {precio_unitario: parseFloat(pr)} : {})
-    });
-  }
-  if(!items.length){ toast('Agregá al menos un producto','err'); return; }
-  const b = {
-    cliente_id, items,
-    fecha_entrega: document.getElementById('np-fecha').value||null,
-    observaciones: document.getElementById('np-obs').value||null,
-  };
-  try{
-    await api('/api/v1/pedidos/',{method:'POST',body:JSON.stringify(b)});
-    toast('Pedido creado'); closeModal(); _itemIdx=0; pgPedidos();
-  }catch(e){ toast(e.message,'err'); }
+function removeItem(i){
+  document.getElementById(`pi-row-${i}`)?.remove();
+  recalcTotal();
 }
 
-function pgComingSoon(){
-  setContent('<div class="empty"><div class="empty-icon">🚧</div>Módulo en desarrollo</div>');
+async function crearPedido(){
+  const cliente_id=document.getElementById('np-cli').value;
+  if(!cliente_id){toast('Seleccioná un cliente','err');return;}
+  const items=[];
+  for(let i=0;i<_itemIdx;i++){
+    const pid=document.getElementById(`pi-p-${i}`)?.value;
+    const cant=document.getElementById(`pi-c-${i}`)?.value;
+    const pr=document.getElementById(`pi-pr-${i}`)?.value;
+    if(pid&&cant)items.push({producto_id:pid,cantidad:parseFloat(cant),...(pr?{precio_unitario:parseFloat(pr)}:{})});
+  }
+  if(!items.length){toast('Agregá al menos un producto','err');return;}
+  const b={cliente_id,items,fecha_entrega:document.getElementById('np-fecha').value||null,observaciones:document.getElementById('np-obs').value||null};
+  try{await api('/api/v1/pedidos/',{method:'POST',body:JSON.stringify(b)});toast('Pedido creado');closeModal();_itemIdx=0;pgPedidos();}catch(e){toast(e.message,'err');}
 }
+
+function pgComingSoon(){setContent('<div class="empty"><div style="font-size:32px;margin-bottom:10px">🚧</div>Módulo en desarrollo</div>');}
 </script>
 </body>
 </html>
