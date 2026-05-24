@@ -14,8 +14,10 @@ class Producto(Base):
     nombre        = Column(String(200), nullable=False)
     descripcion   = Column(String, nullable=True)
     unidad_medida = Column(String(30), nullable=False, default="unidad")
+    categoria     = Column(String(100), nullable=True)   # ej: carnicos, repuestos, servicios
+    subcategoria  = Column(String(100), nullable=True)   # ej: cortes_vaca, embutidos, fiambres
     activo        = Column(Boolean, nullable=False, default=True)
     created_at    = Column(DateTime(timezone=True), server_default=func.now())
     updated_at    = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    precios       = relationship("ListaPreciosItem", back_populates="producto")
+    precios = relationship("ListaPreciosItem", back_populates="producto")
