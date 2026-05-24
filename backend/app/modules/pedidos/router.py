@@ -15,16 +15,11 @@ from app.modules.usuarios.model import Usuario
 router = APIRouter(prefix="/pedidos", tags=["Pedidos"])
 
 
-def resolver_precio(
-    producto_id: str,
-    lista_precios_id: Optional[str],
-    precio_manual: Optional[Decimal],
-    db: Session,
-) -> Decimal:
+def resolver_precio(producto_id, lista_precios_id, precio_manual, db):
     """
-    Resuelve el precio a aplicar con esta cascada:
-    1. Precio manual enviado en el item (precio especial por pedido)
-    2. Precio de la lista asignada al cliente
+    Cascada de resolución de precio:
+    1. Precio manual enviado en el item
+    2. Precio de la lista del cliente
     3. Error si no hay precio disponible
     """
     if precio_manual is not None:
@@ -40,8 +35,8 @@ def resolver_precio(
 
     raise HTTPException(
         status_code=422,
-        detail=f"No hay precio definido para el producto {producto_id}. "
-               "Asignale una lista de precios al cliente o enviá el precio manualmente.",
+        detail=f"No hay precio para el producto {producto_id}. "
+               "Asigná una lista de precios al cliente o ingresá el precio manualmente."
     )
 
 
@@ -55,7 +50,6 @@ def listar_pedidos(
     _: Usuario = Depends(get_current_user),
 ):
     query = db.query(Pedido)
-
     if cliente_id:
         query = query.filter(Pedido.cliente_id == cliente_id)
     if estado:
@@ -64,7 +58,6 @@ def listar_pedidos(
         query = query.filter(Pedido.fecha_pedido >= fecha_desde)
     if fecha_hasta:
         query = query.filter(Pedido.fecha_pedido <= fecha_hasta)
-
     return query.order_by(Pedido.created_at.desc()).all()
 
 
@@ -86,7 +79,6 @@ def crear_pedido(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    # Verificar cliente existe y está activo
     cliente = db.query(Cliente).filter(
         Cliente.id == str(data.cliente_id),
         Cliente.estado == "activo",
@@ -94,7 +86,6 @@ def crear_pedido(
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado o inactivo")
 
-    # Construir items resolviendo precios
     pedido_items = []
     total = Decimal("0")
 
@@ -106,7 +97,7 @@ def crear_pedido(
         if not producto:
             raise HTTPException(
                 status_code=404,
-                detail=f"Producto {item_data.producto_id} no encontrado o inactivo",
+                detail=f"Producto {item_data.producto_id} no encontrado o inactivo"
             )
 
         precio = resolver_precio(
@@ -119,15 +110,14 @@ def crear_pedido(
         subtotal = Decimal(str(item_data.cantidad)) * precio
         total += subtotal
 
+        # NO pasamos subtotal — PostgreSQL lo calcula como columna generada
         pedido_items.append(PedidoItem(
             producto_id=str(item_data.producto_id),
             cantidad=item_data.cantidad,
             precio_unitario=precio,
-            subtotal=subtotal,
             observacion=None,
         ))
 
-    # Crear el pedido
     pedido = Pedido(
         cliente_id=str(data.cliente_id),
         usuario_id=str(current_user.id),
@@ -153,11 +143,10 @@ def actualizar_pedido(
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
 
-    # No permitir editar pedidos ya entregados o cancelados
     if pedido.estado in ("entregado", "cancelado"):
         raise HTTPException(
             status_code=400,
-            detail=f"No se puede modificar un pedido en estado '{pedido.estado}'",
+            detail=f"No se puede modificar un pedido en estado '{pedido.estado}'"
         )
 
     for field, value in data.model_dump(exclude_unset=True).items():
@@ -174,7 +163,6 @@ def cancelar_pedido(
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    """Cancela un pedido — solo si está en estado pendiente"""
     pedido = db.query(Pedido).filter(Pedido.id == pedido_id).first()
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
@@ -182,7 +170,7 @@ def cancelar_pedido(
     if pedido.estado != "pendiente":
         raise HTTPException(
             status_code=400,
-            detail=f"Solo se pueden cancelar pedidos pendientes. Estado actual: '{pedido.estado}'",
+            detail=f"Solo se pueden cancelar pedidos pendientes. Estado actual: '{pedido.estado}'"
         )
 
     pedido.estado = "cancelado"

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, Date, Numeric, ForeignKey, Text, CheckConstraint
+from sqlalchemy import Column, String, DateTime, Date, Numeric, ForeignKey, Text, CheckConstraint, Computed
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -15,7 +15,6 @@ class Pedido(Base):
     usuario_id    = Column(UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="SET NULL"), nullable=True)
     ruta_id       = Column(UUID(as_uuid=True), ForeignKey("rutas.id", ondelete="SET NULL"), nullable=True)
     estado        = Column(String(30), nullable=False, default="pendiente")
-    # estados: pendiente | en_ruta | entregado | cancelado | no_entregado
     fecha_pedido  = Column(Date, nullable=False, server_default=func.current_date())
     fecha_entrega = Column(Date, nullable=True)
     observaciones = Column(Text, nullable=True)
@@ -37,8 +36,8 @@ class PedidoItem(Base):
     producto_id     = Column(UUID(as_uuid=True), ForeignKey("productos.id", ondelete="RESTRICT"), nullable=False)
     cantidad        = Column(Numeric(10, 3), nullable=False)
     precio_unitario = Column(Numeric(12, 2), nullable=False)
-    # precio grabado al momento del pedido — no se recalcula aunque cambie la lista
-    subtotal        = Column(Numeric(12, 2), nullable=False, default=0)
+    subtotal        = Column(Numeric(12, 2), Computed("cantidad * precio_unitario", persisted=True))
+    # subtotal es GENERATED ALWAYS en PostgreSQL — SQLAlchemy lo lee pero nunca lo inserta
     observacion     = Column(Text, nullable=True)
 
     pedido   = relationship("Pedido", back_populates="items")
