@@ -4,13 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
 # Importar TODOS los modelos para que SQLAlchemy los registre al arrancar
-# Aunque no tengan router aún, deben estar importados
 from app.modules.usuarios.model import Usuario
 from app.modules.clientes.model import Cliente
 from app.modules.productos.model import Producto
 from app.modules.precios.model import ListaPrecios, ListaPreciosItem
-from app.modules.rutas.model import Ruta, RutaParada       # necesario para Pedido
+from app.modules.rutas.model import Ruta, RutaParada
 from app.modules.pedidos.model import Pedido, PedidoItem
+from app.modules.remitos.model import Remito, RemitoPedido
 
 # Routers
 from app.modules.usuarios.router import router as usuarios_router
@@ -18,6 +18,7 @@ from app.modules.clientes.router import router as clientes_router
 from app.modules.productos.router import router as productos_router
 from app.modules.precios.router import router as precios_router
 from app.modules.pedidos.router import router as pedidos_router
+from app.modules.remitos.router import router as remitos_router
 
 app = FastAPI(
     title="Sistema de Gestión DGC",
@@ -27,7 +28,6 @@ app = FastAPI(
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
 
-# Orígenes permitidos
 ALLOWED_ORIGINS = [
     "https://ezeg90.github.io",
     "http://localhost:3000",
@@ -48,6 +48,7 @@ app.include_router(clientes_router,  prefix="/api/v1")
 app.include_router(productos_router, prefix="/api/v1")
 app.include_router(precios_router,   prefix="/api/v1")
 app.include_router(pedidos_router,   prefix="/api/v1")
+app.include_router(remitos_router,   prefix="/api/v1")
 
 
 @app.get("/", tags=["Health"])

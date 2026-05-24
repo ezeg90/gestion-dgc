@@ -15,6 +15,8 @@ class Pedido(Base):
     usuario_id    = Column(UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="SET NULL"), nullable=True)
     ruta_id       = Column(UUID(as_uuid=True), ForeignKey("rutas.id", ondelete="SET NULL"), nullable=True)
     estado        = Column(String(30), nullable=False, default="pendiente")
+    forma_pago    = Column(String(50), nullable=False, default="cuenta_corriente")
+    # valores: cuenta_corriente | contado | cheque | transferencia | tarjeta
     fecha_pedido  = Column(Date, nullable=False, server_default=func.current_date())
     fecha_entrega = Column(Date, nullable=True)
     observaciones = Column(Text, nullable=True)
@@ -37,13 +39,12 @@ class PedidoItem(Base):
     cantidad        = Column(Numeric(10, 3), nullable=False)
     precio_unitario = Column(Numeric(12, 2), nullable=False)
     subtotal        = Column(Numeric(12, 2), Computed("cantidad * precio_unitario", persisted=True))
-    # subtotal es GENERATED ALWAYS en PostgreSQL — SQLAlchemy lo lee pero nunca lo inserta
     observacion     = Column(Text, nullable=True)
 
     pedido   = relationship("Pedido", back_populates="items")
     producto = relationship("Producto")
 
     __table_args__ = (
-        CheckConstraint("cantidad > 0", name="chk_cantidad_positiva"),
+        CheckConstraint("cantidad > 0",        name="chk_cantidad_positiva"),
         CheckConstraint("precio_unitario >= 0", name="chk_precio_positivo"),
     )
