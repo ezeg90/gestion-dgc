@@ -26,7 +26,7 @@ class Cliente(Base):
     created_at       = Column(DateTime(timezone=True), server_default=func.now())
     updated_at       = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    lista_precios = relationship("ListaPrecios", back_populates="clientes")
-    pedidos       = relationship("Pedido", back_populates="cliente")
-    # cuenta_corriente se agrega cuando se cree ese módulo
+    lista_precios    = relationship("ListaPrecios", back_populates="clientes")
+    pedidos          = relationship("Pedido", back_populates="cliente")
+    cuenta_corriente = relationship("CuentaCorriente", back_populates="cliente", uselist=False)
 

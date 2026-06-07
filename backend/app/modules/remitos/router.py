@@ -146,6 +146,9 @@ def crear_remito(
     for pedido in pedidos:
         db.add(RemitoPedido(remito_id=str(remito.id), pedido_id=str(pedido.id)))
 
+    # Generar débito automático en cuenta corriente
+    _registrar_debito_por_remito(remito, pedidos, db)
+
     db.commit()
     db.refresh(remito)
 
@@ -182,3 +185,44 @@ def actualizar_remito(
         observaciones=remito.observaciones, created_at=remito.created_at,
         pedido_ids=[rp.pedido_id for rp in remito.remito_pedidos]
     )
+
+
+def _registrar_debito_por_remito(remito, pedidos, db):
+    """Genera automáticamente el débito en cuenta corriente al emitir un remito"""
+    from app.modules.cuentas_corrientes.model import CuentaCorriente, MovimientoCuentaCorriente
+    from decimal import Decimal
+
+    cc = db.query(CuentaCorriente).filter(
+        CuentaCorriente.cliente_id == str(remito.cliente_id)
+    ).first()
+    if not cc:
+        return  # cliente sin cuenta corriente, no hacer nada
+
+    total = sum(
+        Decimal(str(item.subtotal))
+        for pedido in pedidos
+        for item in pedido.items
+    )
+    if total <= 0:
+        return
+
+    mov = MovimientoCuentaCorriente(
+        cuenta_corriente_id=str(cc.id),
+        tipo="debito",
+        monto=total,
+        referencia_tipo="remito",
+        referencia_id=remito.id,
+        descripcion=f"Remito {remito.numero}",
+        usuario_id=str(remito.usuario_id) if remito.usuario_id else None,
+    )
+    db.add(mov)
+
+    # Recalcular saldo
+    movs = db.query(MovimientoCuentaCorriente).filter(
+        MovimientoCuentaCorriente.cuenta_corriente_id == cc.id
+    ).all()
+    cc.saldo_actual = sum(
+        Decimal(str(m.monto)) if m.tipo == "debito" else -Decimal(str(m.monto))
+        for m in movs
+    ) + total  # incluir el que acabamos de agregar
+    db.add(cc)

@@ -11,6 +11,18 @@ from app.modules.usuarios.model import Usuario
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
 
+def _crear_cuenta_corriente(cliente_id: str, db: Session):
+    """Crea cuenta corriente automáticamente al dar de alta un cliente"""
+    from app.modules.cuentas_corrientes.model import CuentaCorriente
+    cc = CuentaCorriente(
+        cliente_id=cliente_id,
+        saldo_actual=0,
+        limite_credito=0,
+        estado="activa",
+    )
+    db.add(cc)
+
+
 @router.get("/", response_model=List[ClienteListOut])
 def listar_clientes(
     estado: Optional[str] = Query(None),
@@ -20,7 +32,6 @@ def listar_clientes(
     _: Usuario = Depends(get_current_user),
 ):
     query = db.query(Cliente)
-
     if estado:
         query = query.filter(Cliente.estado == estado)
     if localidad:
@@ -29,7 +40,6 @@ def listar_clientes(
         query = query.filter(
             Cliente.razon_social.ilike(f"%{q}%") | Cliente.cuit.ilike(f"%{q}%")
         )
-
     return query.order_by(Cliente.razon_social).all()
 
 
@@ -53,6 +63,8 @@ def crear_cliente(
 ):
     cliente = Cliente(**data.model_dump(), created_by=current_user.id)
     db.add(cliente)
+    db.flush()  # necesitamos el ID antes del commit para la cuenta corriente
+    _crear_cuenta_corriente(str(cliente.id), db)
     db.commit()
     db.refresh(cliente)
     return cliente
@@ -83,10 +95,8 @@ def desactivar_cliente(
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
-    """Soft delete — cambia estado a inactivo, no borra el registro"""
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-
     cliente.estado = "inactivo"
     db.commit()
