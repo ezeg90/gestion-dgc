@@ -784,7 +784,14 @@ function generarOpcionesProductos(prods){
 async function pgRemitos(){
   document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevoRemito()">+ Nuevo remito</button>`;
   try{
-    const remitos=await api('/api/v1/remitos/');
+    // Traer remitos y clientes juntos para mostrar nombre en la grilla
+    const [remitos, clientes] = await Promise.all([
+      api('/api/v1/remitos/'),
+      api('/api/v1/clientes/')
+    ]);
+    const cliMap={};
+    clientes.forEach(c=>{cliMap[c.id]={nombre:c.razon_social, telefono:c.telefono||''};});
+
     setContent(`
       <div class="section-header">
         <h3>${remitos.length} remitos</h3>
@@ -793,17 +800,22 @@ async function pgRemitos(){
       <div class="table-wrap"><table>
         <thead><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Pedidos</th><th>Estado</th><th></th></tr></thead>
         <tbody id="tb-rem">
-          ${remitos.map(r=>`<tr>
-            <td><strong class="mono">${r.numero}</strong></td>
-            <td>${r.fecha}</td>
-            <td class="mono muted" style="font-size:11px">${r.cliente_id.slice(0,8)}…</td>
-            <td class="muted" style="font-size:12px">${r.pedido_ids?.length||0} pedido(s)</td>
-            <td>${badge(r.estado)}</td>
-            <td style="display:flex;gap:6px">
-              <button class="btn btn-ghost btn-sm" onclick="verRemito('${r.id}')">Ver</button>
-              <button class="btn btn-primary btn-sm" onclick="imprimirRemito('${r.id}')">PDF</button>
-            </td>
-          </tr>`).join('')||'<tr><td colspan="6" class="empty">Sin remitos aún</td></tr>'}
+          ${remitos.map(r=>{
+            const cli=cliMap[r.cliente_id]||{nombre:r.cliente_id.slice(0,8)+'…',telefono:''};
+            const tel=cli.telefono;
+            return `<tr>
+              <td><strong class="mono">${r.numero}</strong></td>
+              <td>${r.fecha}</td>
+              <td><strong>${cli.nombre}</strong>${tel?`<br/><span class="mono muted" style="font-size:10px">${tel}</span>`:''}</td>
+              <td class="muted" style="font-size:12px">${r.pedido_ids?.length||0} pedido(s)</td>
+              <td>${badge(r.estado)}</td>
+              <td style="display:flex;gap:4px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="verRemito('${r.id}')">Ver</button>
+                <button class="btn btn-primary btn-sm" onclick="imprimirRemito('${r.id}')">PDF</button>
+                ${tel?`<button class="btn btn-success btn-sm" onclick="abrirWhatsApp('${tel}','${r.numero}')">WhatsApp</button>`:''}
+              </td>
+            </tr>`;
+          }).join('')||'<tr><td colspan="6" class="empty">Sin remitos aún</td></tr>'}
         </tbody>
       </table></div>`);
   }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
