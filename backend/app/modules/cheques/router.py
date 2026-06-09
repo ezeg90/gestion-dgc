@@ -15,7 +15,7 @@ from app.modules.cheques.schemas import (
     CambioEstadoCheque,
 )
 
-router = APIRouter(prefix="/api/v1/cheques-emitidos", tags=["Cheques Emitidos"])
+router = APIRouter(prefix="/cheques-emitidos", tags=["Cheques Emitidos"])
 
 
 def _enrich(cheque: ChequeEmitido) -> dict:
