@@ -112,6 +112,33 @@ td{padding:11px 14px;vertical-align:middle}
 .filters-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
 .filters-bar select,.filters-bar input{padding:7px 12px;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;font-family:var(--font);outline:none}
 .filters-bar select:focus,.filters-bar input:focus{border-color:var(--accent)}
+/* ── Cheques: pestañas ── */
+.tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab-btn{padding:8px 18px;border-radius:7px 7px 0 0;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);background:transparent;color:var(--muted);transition:all .15s;position:relative;bottom:-1px;border:1px solid transparent;border-bottom:none}
+.tab-btn:hover{color:var(--text);background:var(--card)}
+.tab-btn.active{background:var(--surface);color:var(--accent);border-color:var(--border);border-bottom-color:var(--surface)}
+/* ── Cartera: timeline ── */
+.timeline-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px;overflow-x:auto}
+.timeline-track{position:relative;height:56px;min-width:600px;margin:8px 0 24px}
+.timeline-axis{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--border)}
+.timeline-tick{position:absolute;bottom:0;width:1px;background:var(--border);height:8px}
+.timeline-tick-label{position:absolute;bottom:-18px;font-size:10px;color:var(--muted);font-family:var(--mono);transform:translateX(-50%);white-space:nowrap}
+.timeline-dot{position:absolute;width:12px;height:12px;border-radius:50%;top:50%;transform:translate(-50%,-50%);cursor:pointer;transition:transform .15s;z-index:2}
+.timeline-dot:hover{transform:translate(-50%,-50%) scale(1.5)}
+.timeline-dot-label{position:absolute;top:-28px;font-size:10px;font-family:var(--mono);white-space:nowrap;transform:translateX(-50%);pointer-events:none}
+/* ── Cartera: calendario ── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.cal-header{text-align:center;font-size:10px;color:var(--muted);padding:4px;text-transform:uppercase;letter-spacing:.5px}
+.cal-cell{min-height:52px;background:var(--card);border:1px solid var(--border);border-radius:5px;padding:4px 5px;font-size:11px;position:relative;transition:background .1s}
+.cal-cell.has-cheque{border-color:var(--orange);cursor:pointer}
+.cal-cell.has-cheque:hover{background:rgba(245,158,11,.08)}
+.cal-cell.today{border-color:var(--accent)}
+.cal-cell.out-month{opacity:.3}
+.cal-day{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.cal-monto{font-size:10px;font-family:var(--mono);color:var(--orange);font-weight:600;margin-top:2px;line-height:1.2}
+.cal-count{font-size:9px;color:var(--muted)}
+/* ── Cartera: acumulado ── */
+.acum-bar{height:6px;border-radius:3px;background:var(--accent);transition:width .3s}
 </style>
 </head>
 <body>
@@ -238,17 +265,47 @@ function filtrar(q,tbodyId){document.querySelectorAll(`#${tbodyId} tr`).forEach(
 // ══════════════════════════════════════════════════════════════
 async function pgDashboard(){
   try{
-    const [clientes,productos,pedidos]=await Promise.all([api('/api/v1/clientes/'),api('/api/v1/productos/'),api('/api/v1/pedidos/')]);
+    const [clientes,productos,pedidos,cheques]=await Promise.all([
+      api('/api/v1/clientes/'),api('/api/v1/productos/'),api('/api/v1/pedidos/'),
+      api('/api/v1/cheques-emitidos/').catch(()=>[])
+    ]);
     const activos=clientes.filter(c=>c.estado==='activo').length;
     const pendientes=pedidos.filter(p=>p.estado==='pendiente').length;
     const entregados=pedidos.filter(p=>p.estado==='entregado').length;
     const facturado=pedidos.filter(p=>p.estado==='entregado').reduce((s,p)=>s+parseFloat(p.total||0),0);
+    const hoy=new Date(); hoy.setHours(0,0,0,0);
+    const en30=new Date(hoy); en30.setDate(en30.getDate()+30);
+    const chActivos=cheques.filter(c=>['emitido','en_transito'].includes(c.estado));
+    const chProx7=chActivos.filter(c=>{const d=new Date(c.fecha_vencimiento+'T00:00:00');return d>=hoy&&d<=new Date(hoy.getTime()+7*86400000);});
+    const chProx30=chActivos.filter(c=>{const d=new Date(c.fecha_vencimiento+'T00:00:00');return d>=hoy&&d<=en30;});
+    const totalProx30=chProx30.reduce((s,c)=>s+parseFloat(c.monto||0),0);
+    const chProx7Sorted=[...chProx7].sort((a,b)=>a.fecha_vencimiento.localeCompare(b.fecha_vencimiento));
+    const filasCh=chProx7Sorted.map(c=>{
+      const dias=Math.round((new Date(c.fecha_vencimiento+'T00:00:00')-hoy)/86400000);
+      return '<tr><td class="mono"><strong>'+c.numero+'</strong></td><td>'+c.beneficiario+'</td><td class="mono">$'+parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})+'</td><td class="muted" style="font-size:12px">'+c.fecha_vencimiento+'</td><td><span style="font-family:var(--mono);font-weight:700;color:'+(dias<=3?'var(--warn)':'var(--orange)')+'">'+dias+'d</span></td></tr>';
+    }).join('');
+    const widgetAlerta=chProx7Sorted.length
+      ?'<div style="font-size:11px;color:var(--warn);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.7px">⚠️ Vencen en 7 días</div><div class="table-wrap"><table><thead><tr><th>N° Cheque</th><th>Beneficiario</th><th>Monto</th><th>Vencimiento</th><th>Días</th></tr></thead><tbody>'+filasCh+'</tbody></table></div>'
+      :'<div style="color:var(--accent2);font-size:13px">✓ Sin cheques venciendo en los próximos 7 días</div>';
     setContent(`
       <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
         <div class="stat-card"><div class="stat-label">Clientes activos</div><div class="stat-value" style="color:var(--accent)">${activos}</div><div class="stat-sub">${clientes.length} total</div></div>
         <div class="stat-card"><div class="stat-label">Productos</div><div class="stat-value">${productos.length}</div><div class="stat-sub">en catálogo</div></div>
         <div class="stat-card"><div class="stat-label">Pedidos pendientes</div><div class="stat-value" style="color:var(--orange)">${pendientes}</div><div class="stat-sub">${entregados} entregados</div></div>
         <div class="stat-card"><div class="stat-label">Total facturado</div><div class="stat-value" style="color:var(--accent2)">$${facturado.toLocaleString('es-AR',{minimumFractionDigits:0})}</div><div class="stat-sub">pedidos entregados</div></div>
+      </div>
+      <div class="stats-row" style="grid-template-columns:1fr">
+        <div class="stat-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div>
+              <div class="stat-label">💳 Cartera de cheques — comprometido próximos 30 días</div>
+              <div class="stat-value" style="color:var(--orange);font-size:22px">$${totalProx30.toLocaleString('es-AR',{minimumFractionDigits:0})}</div>
+              <div class="stat-sub">${chProx30.length} cheque${chProx30.length!==1?'s':''} · ${chActivos.length} activos en cartera</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="goTo(document.querySelector('[data-page=cheques]'));setTimeout(()=>switchTabCheques('cartera'),300)">Ver cartera →</button>
+          </div>
+          ${widgetAlerta}
+        </div>
       </div>
       <div class="section-header"><h3>Últimos pedidos</h3></div>
       <div class="table-wrap"><table>
@@ -1236,235 +1293,329 @@ const CH_TRANSICIONES = {
   anulado:     [],
 };
 
+// Pestaña activa: 'abm' | 'cartera'
+let _chTab = 'abm';
+
+function switchTabCheques(tab){
+  _chTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.getElementById('ch-pane-abm').style.display   = tab==='abm'    ? '' : 'none';
+  document.getElementById('ch-pane-cartera').style.display = tab==='cartera' ? '' : 'none';
+  if(tab==='cartera') renderCartera();
+}
+
 async function pgCheques(){
   document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevoCheque()">+ Nuevo cheque</button>`;
   try{
-    // Stats por estado
     const todos = await api('/api/v1/cheques-emitidos/');
-    const activos = todos.filter(c=>['emitido','en_transito'].includes(c.estado));
-    const totalActivo = activos.reduce((s,c)=>s+parseFloat(c.monto||0),0);
-
     const proximos = await api('/api/v1/cheques-emitidos/proximos-vencer?dias=7').catch(()=>[]);
 
-    // Alerta de vencimientos
     let alertaHtml = '';
     if(proximos.length){
       const chips = proximos.map(c=>`<span class="chip-vence">N°${c.numero} · ${c.beneficiario} · $${parseFloat(c.monto).toLocaleString('es-AR')} · ${c.fecha_vencimiento} (${c.dias_para_vencer}d)</span>`).join(' ');
       alertaHtml = `<div class="alert-vencimiento">⚠️ <strong>${proximos.length} cheque${proximos.length>1?'s':''} vence${proximos.length===1?'':'n'} en 7 días</strong><br/><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${chips}</div></div>`;
     }
 
+    // Guardar datos globalmente para la cartera
+    window._chTodos = todos;
+
     setContent(`
       ${alertaHtml}
-      <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
-        ${Object.entries(CH_ESTADOS).map(([k,v])=>`
-          <div class="stat-card">
-            <div class="stat-label">${v.label}</div>
-            <div class="stat-value" style="color:${v.color};font-size:22px">${todos.filter(c=>c.estado===k).length}</div>
-          </div>`).join('')}
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="abm" onclick="switchTabCheques('abm')">📋 ABM Cheques</button>
+        <button class="tab-btn" data-tab="cartera" onclick="switchTabCheques('cartera')">📊 Cartera / Vencimientos</button>
       </div>
-      <div class="filters-bar">
-        <select id="ch-filtro-estado" onchange="recargarCheques()">
-          <option value="">Todos los estados</option>
-          ${Object.entries(CH_ESTADOS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
-        </select>
-        <input id="ch-filtro-benef" type="text" placeholder="Buscar beneficiario…" oninput="recargarCheques()" style="flex:1;min-width:180px"/>
-        <button class="btn btn-ghost btn-sm" onclick="recargarCheques()">↻ Actualizar</button>
+
+      <!-- PANE ABM -->
+      <div id="ch-pane-abm">
+        <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+          ${Object.entries(CH_ESTADOS).map(([k,v])=>`
+            <div class="stat-card">
+              <div class="stat-label">${v.label}</div>
+              <div class="stat-value" style="color:${v.color};font-size:22px">${todos.filter(c=>c.estado===k).length}</div>
+            </div>`).join('')}
+        </div>
+        <div class="filters-bar">
+          <select id="ch-filtro-estado" onchange="recargarCheques()">
+            <option value="">Todos los estados</option>
+            ${Object.entries(CH_ESTADOS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
+          </select>
+          <input id="ch-filtro-benef" type="text" placeholder="Buscar beneficiario…" oninput="recargarCheques()" style="flex:1;min-width:180px"/>
+          <button class="btn btn-ghost btn-sm" onclick="recargarCheques()">↻ Actualizar</button>
+        </div>
+        <div id="ch-tabla-wrap">${renderTablaCheques(todos)}</div>
       </div>
-      <div id="ch-tabla-wrap">
-        ${renderTablaCheques(todos)}
+
+      <!-- PANE CARTERA -->
+      <div id="ch-pane-cartera" style="display:none">
+        <div id="cartera-content"><div class="loading-page"><div class="spinner"></div> Cargando cartera…</div></div>
       </div>`);
+
+    _chTab = 'abm';
   }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
-function renderTablaCheques(cheques){
-  if(!cheques.length) return '<div class="empty">Sin cheques registrados</div>';
-  return `<div class="table-wrap"><table>
-    <thead><tr><th>N° Cheque</th><th>Banco</th><th>Beneficiario</th><th>Monto</th><th>Emisión</th><th>Vencimiento</th><th>Días</th><th>Estado</th><th></th></tr></thead>
-    <tbody id="tb-cheques">
-      ${cheques.map(c=>{
-        const est = CH_ESTADOS[c.estado]||{label:c.estado,color:'var(--muted)'};
-        const diasEl = c.dias_para_vencer !== null && c.dias_para_vencer !== undefined
-          ? `<span style="font-family:var(--mono);font-weight:600;color:${c.dias_para_vencer<=3?'var(--warn)':c.dias_para_vencer<=7?'var(--orange)':'var(--text)'}">${c.dias_para_vencer}d</span>`
-          : '—';
-        return `<tr>
-          <td><strong class="mono">${c.numero}</strong></td>
-          <td>${c.banco}${c.sucursal?` <span class="muted">(${c.sucursal})</span>`:''}</td>
-          <td>${c.beneficiario}</td>
-          <td class="mono">$${parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
-          <td class="muted" style="font-size:12px">${c.fecha_emision}</td>
-          <td class="muted" style="font-size:12px">${c.fecha_vencimiento}</td>
-          <td>${diasEl}</td>
-          <td><span class="badge b-${c.estado}">${est.label}</span></td>
-          <td style="display:flex;gap:4px">
-            <button class="btn btn-ghost btn-sm" onclick="verCheque('${c.id}')">Ver</button>
-            <button class="btn btn-ghost btn-sm" onclick="modalEditarCheque('${c.id}')">✏️</button>
-            ${CH_TRANSICIONES[c.estado]?.length?`<button class="btn btn-success btn-sm" onclick="modalCambioEstadoCheque('${c.id}','${c.estado}')">→</button>`:''}
-            ${['emitido'].includes(c.estado)?`<button class="btn btn-danger btn-sm" onclick="eliminarCheque('${c.id}','${c.numero}')">🗑️</button>`:''}
-          </td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table></div>`;
-}
+// ── CARTERA ───────────────────────────────────────────────────
+function renderCartera(){
+  const todos = window._chTodos || [];
+  const activos = todos.filter(c=>['emitido','en_transito'].includes(c.estado));
 
-async function recargarCheques(){
-  const estado = document.getElementById('ch-filtro-estado')?.value||'';
-  const benef  = document.getElementById('ch-filtro-benef')?.value||'';
-  let url = '/api/v1/cheques-emitidos/?';
-  if(estado) url+=`estado=${estado}&`;
-  if(benef)  url+=`beneficiario=${encodeURIComponent(benef)}&`;
-  try{
-    const cheques = await api(url);
-    const wrap = document.getElementById('ch-tabla-wrap');
-    if(wrap) wrap.innerHTML = renderTablaCheques(cheques);
-  }catch(e){toast(e.message,'err');}
-}
+  // Defaults de rango: hoy + 60 días
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const def_desde = hoy.toISOString().split('T')[0];
+  const def_hasta = new Date(hoy.getTime()+60*86400000).toISOString().split('T')[0];
 
-async function verCheque(id){
-  try{
-    const c = await api(`/api/v1/cheques-emitidos/${id}`);
-    const est = CH_ESTADOS[c.estado]||{label:c.estado,color:'var(--muted)'};
-    const diasTxt = c.dias_para_vencer!=null ? `${c.dias_para_vencer} días` : '—';
-    openModal(`
-      <h3>Cheque N° ${c.numero}</h3>
-      <div class="detail-grid" style="margin-bottom:14px">
-        <div class="detail-item"><span>Banco</span>${c.banco}${c.sucursal?` (${c.sucursal})`:''}</div>
-        <div class="detail-item"><span>Beneficiario</span><strong>${c.beneficiario}</strong></div>
-        <div class="detail-item"><span>Monto</span><strong class="mono" style="font-size:16px">$${parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})}</strong></div>
-        <div class="detail-item"><span>Estado</span><span class="badge b-${c.estado}">${est.label}</span></div>
-        <div class="detail-item"><span>Fecha de emisión</span>${c.fecha_emision}</div>
-        <div class="detail-item"><span>Fecha de vencimiento</span>${c.fecha_vencimiento}</div>
-        <div class="detail-item"><span>Días para vencer</span>${diasTxt}</div>
-        ${c.concepto?`<div class="detail-item"><span>Concepto</span>${c.concepto}</div>`:''}
-        ${c.observaciones?`<div class="detail-item" style="grid-column:1/-1"><span>Observaciones</span>${c.observaciones}</div>`:''}
+  const el = document.getElementById('cartera-content');
+  if(!el) return;
+
+  el.innerHTML = `
+    <!-- Selector de rango -->
+    <div class="stat-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">📅 Período a analizar</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:12px;color:var(--muted)">Desde</label>
+          <input type="date" id="car-desde" value="${def_desde}" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none" onchange="actualizarCartera()"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:12px;color:var(--muted)">Hasta</label>
+          <input type="date" id="car-hasta" value="${def_hasta}" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none" onchange="actualizarCartera()"/>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="setRangoCartera(7)">7d</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRangoCartera(15)">15d</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRangoCartera(30)">30d</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRangoCartera(60)">60d</button>
+          <button class="btn btn-ghost btn-sm" onclick="setRangoCartera(90)">90d</button>
+        </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
-        <button class="btn btn-ghost btn-sm" onclick="modalEditarCheque('${c.id}')">Editar</button>
-        ${CH_TRANSICIONES[c.estado]?.length?`<button class="btn btn-primary btn-sm" onclick="modalCambioEstadoCheque('${c.id}','${c.estado}')">Cambiar estado</button>`:''}
-      </div>`);
-  }catch(e){toast(e.message,'err');}
+    </div>
+    <div id="cartera-body"></div>`;
+
+  actualizarCartera();
 }
 
-function _formCheque(datos=null){
-  const hoy = new Date().toISOString().split('T')[0];
+function setRangoCartera(dias){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  document.getElementById('car-desde').value = hoy.toISOString().split('T')[0];
+  document.getElementById('car-hasta').value = new Date(hoy.getTime()+dias*86400000).toISOString().split('T')[0];
+  actualizarCartera();
+}
+
+function actualizarCartera(){
+  const desde_str = document.getElementById('car-desde')?.value;
+  const hasta_str = document.getElementById('car-hasta')?.value;
+  if(!desde_str||!hasta_str) return;
+
+  const desde = new Date(desde_str+'T00:00:00');
+  const hasta  = new Date(hasta_str+'T00:00:00');
+  if(hasta < desde){ toast('La fecha hasta debe ser mayor a la fecha desde','err'); return; }
+
+  const todos   = window._chTodos || [];
+  const activos = todos.filter(c=>['emitido','en_transito'].includes(c.estado));
+  const enRango = activos.filter(c=>{
+    const d = new Date(c.fecha_vencimiento+'T00:00:00');
+    return d >= desde && d <= hasta;
+  }).sort((a,b)=>a.fecha_vencimiento.localeCompare(b.fecha_vencimiento));
+
+  const totalRango   = enRango.reduce((s,c)=>s+parseFloat(c.monto||0),0);
+  const promedioRango = enRango.length ? totalRango/enRango.length : 0;
+  const diasRango    = Math.round((hasta-desde)/86400000)+1;
+
+  // ── Cards resumen ──
+  const cardsHtml = `
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">Cheques en período</div><div class="stat-value" style="font-size:22px">${enRango.length}</div><div class="stat-sub">de ${activos.length} activos</div></div>
+      <div class="stat-card"><div class="stat-label">Total comprometido</div><div class="stat-value" style="color:var(--orange);font-size:20px">$${totalRango.toLocaleString('es-AR',{minimumFractionDigits:0})}</div><div class="stat-sub">en ${diasRango} días</div></div>
+      <div class="stat-card"><div class="stat-label">Promedio por cheque</div><div class="stat-value" style="font-size:20px">$${promedioRango.toLocaleString('es-AR',{minimumFractionDigits:0})}</div><div class="stat-sub">&nbsp;</div></div>
+      <div class="stat-card"><div class="stat-label">Egreso diario prom.</div><div class="stat-value" style="color:var(--warn);font-size:20px">$${diasRango>0?(totalRango/diasRango).toLocaleString('es-AR',{minimumFractionDigits:0}):'0'}</div><div class="stat-sub">por día hábil estimado</div></div>
+    </div>`;
+
+  // ── Timeline ──
+  const timelineHtml = enRango.length ? buildTimeline(enRango, desde, hasta) : '';
+
+  // ── Calendario ──
+  const calHtml = buildCalendario(enRango, desde, hasta);
+
+  // ── Tabla con acumulado ──
+  const tablaHtml = buildTablaAcumulado(enRango);
+
+  document.getElementById('cartera-body').innerHTML = cardsHtml + timelineHtml + calHtml + tablaHtml;
+}
+
+function buildTimeline(cheques, desde, hasta){
+  const totalMs = hasta - desde || 1;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const colores = ['#4f7cff','#00d4aa','#f59e0b','#ff6b6b','#a78bfa','#34d399','#fb923c'];
+
+  const dots = cheques.map((c,i)=>{
+    const d = new Date(c.fecha_vencimiento+'T00:00:00');
+    const pct = Math.max(0,Math.min(100, (d-desde)/totalMs*100));
+    const dias = Math.round((d-hoy)/86400000);
+    const color = dias<=0?'#ff6b6b':dias<=3?'#ff6b6b':dias<=7?'#f59e0b':'#4f7cff';
+    const monto = '$'+parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:0});
+    return `<div class="timeline-dot" style="left:${pct}%;background:${color}" title="N°${c.numero} · ${c.beneficiario} · ${monto} · vence ${c.fecha_vencimiento}">
+      <div class="timeline-dot-label" style="color:${color}">${monto}</div>
+    </div>`;
+  }).join('');
+
+  // Ticks cada N días
+  const numTicks = Math.min(8, Math.round(totalMs/86400000)+1);
+  const stepMs = totalMs / (numTicks-1 || 1);
+  const ticks = Array.from({length:numTicks},(_,i)=>{
+    const d = new Date(desde.getTime()+i*stepMs);
+    const pct = i/(numTicks-1 || 1)*100;
+    const label = d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+    return `<div class="timeline-tick" style="left:${pct}%"><div class="timeline-tick-label">${label}</div></div>`;
+  }).join('');
+
+  // Marcador hoy
+  const hoyPct = Math.max(0,Math.min(100,(hoy-desde)/totalMs*100));
+  const hoyMark = hoy>=desde&&hoy<=hasta
+    ? `<div style="position:absolute;left:${hoyPct}%;top:0;bottom:0;width:2px;background:var(--accent2);opacity:.7"><div style="position:absolute;top:-16px;left:4px;font-size:10px;color:var(--accent2);white-space:nowrap;font-family:var(--mono)">Hoy</div></div>`
+    : '';
+
   return `
-    <div class="form-row">
-      <div class="field"><label>N° de Cheque *</label><input id="ch-numero" value="${datos?.numero||''}" placeholder="12345678"/></div>
-      <div class="field"><label>Banco *</label><input id="ch-banco" value="${datos?.banco||''}" placeholder="Banco Nación"/></div>
-    </div>
-    <div class="form-row">
-      <div class="field"><label>Sucursal</label><input id="ch-sucursal" value="${datos?.sucursal||''}" placeholder="San Francisco"/></div>
-      <div class="field"><label>Monto *</label><input id="ch-monto" type="number" step="0.01" min="0" value="${datos?.monto||''}" placeholder="0.00"/></div>
-    </div>
-    <div class="field"><label>Beneficiario *</label><input id="ch-beneficiario" value="${datos?.beneficiario||''}" placeholder="Proveedor SA"/></div>
-    <div class="form-row">
-      <div class="field"><label>Fecha de Emisión *</label><input id="ch-femision" type="date" value="${datos?.fecha_emision||hoy}"/></div>
-      <div class="field"><label>Fecha de Vencimiento *</label><input id="ch-fvencimiento" type="date" value="${datos?.fecha_vencimiento||''}"/></div>
-    </div>
-    <div class="field"><label>Concepto</label><input id="ch-concepto" value="${datos?.concepto||''}" placeholder="Pago factura N°…"/></div>
-    <div class="field"><label>Observaciones</label><textarea id="ch-observaciones" rows="2">${datos?.observaciones||''}</textarea></div>`;
+    <div class="timeline-wrap" style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">📍 Timeline de vencimientos</div>
+      <div class="timeline-track">
+        ${hoyMark}
+        ${dots}
+        <div class="timeline-axis">${ticks}</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:20px">Pasá el cursor sobre cada punto para ver el detalle del cheque</div>
+    </div>`;
 }
 
-function _payloadCheque(){
-  return {
-    numero:            document.getElementById('ch-numero').value.trim(),
-    banco:             document.getElementById('ch-banco').value.trim(),
-    sucursal:          document.getElementById('ch-sucursal').value.trim()||null,
-    beneficiario:      document.getElementById('ch-beneficiario').value.trim(),
-    monto:             parseFloat(document.getElementById('ch-monto').value),
-    fecha_emision:     document.getElementById('ch-femision').value,
-    fecha_vencimiento: document.getElementById('ch-fvencimiento').value,
-    concepto:          document.getElementById('ch-concepto').value.trim()||null,
-    observaciones:     document.getElementById('ch-observaciones').value.trim()||null,
-  };
-}
+function buildCalendario(cheques, desde, hasta){
+  // Agrupar cheques por fecha
+  const porFecha = {};
+  cheques.forEach(c=>{
+    if(!porFecha[c.fecha_vencimiento]) porFecha[c.fecha_vencimiento]={count:0,monto:0,items:[]};
+    porFecha[c.fecha_vencimiento].count++;
+    porFecha[c.fecha_vencimiento].monto += parseFloat(c.monto||0);
+    porFecha[c.fecha_vencimiento].items.push(c);
+  });
 
-function _validarCheque(p){
-  if(!p.numero||!p.banco||!p.beneficiario||!p.monto||!p.fecha_emision||!p.fecha_vencimiento){
-    toast('Completá los campos obligatorios (*)','err'); return false;
+  // Determinar meses a mostrar
+  const meses = [];
+  let cur = new Date(desde.getFullYear(), desde.getMonth(), 1);
+  const finMeses = new Date(hasta.getFullYear(), hasta.getMonth()+1, 1);
+  while(cur < finMeses){
+    meses.push(new Date(cur));
+    cur.setMonth(cur.getMonth()+1);
   }
-  if(p.fecha_vencimiento < p.fecha_emision){
-    toast('La fecha de vencimiento no puede ser anterior a la de emisión','err'); return false;
-  }
-  return true;
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diasSem = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  const mesesHtml = meses.map(mesDate=>{
+    const año = mesDate.getFullYear();
+    const mes  = mesDate.getMonth();
+    const nombreMes = mesDate.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    const primerDia = new Date(año,mes,1).getDay(); // 0=Dom
+    const diasEnMes = new Date(año,mes+1,0).getDate();
+
+    const headerDias = diasSem.map(d=>`<div class="cal-header">${d}</div>`).join('');
+    let cells = Array(primerDia).fill(`<div class="cal-cell out-month"></div>`).join('');
+
+    for(let d=1; d<=diasEnMes; d++){
+      const dateStr = `${año}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const cellDate = new Date(año,mes,d);
+      const isToday  = cellDate.getTime()===hoy.getTime();
+      const data     = porFecha[dateStr];
+      const enRangoCell = cellDate>=desde && cellDate<=hasta;
+      let cls = 'cal-cell';
+      if(data && enRangoCell) cls += ' has-cheque';
+      if(isToday) cls += ' today';
+      if(!enRangoCell && !isToday) cls += ' out-month';
+      const montoStr = data&&enRangoCell ? `<div class="cal-monto">$${data.monto.toLocaleString('es-AR',{maximumFractionDigits:0})}</div><div class="cal-count">${data.count} cheque${data.count>1?'s':''}</div>` : '';
+      const onclick = data&&enRangoCell ? `onclick="verChequesDelDia('${dateStr}')"` : '';
+      cells += `<div class="${cls}" ${onclick}><div class="cal-day">${d}</div>${montoStr}</div>`;
+    }
+
+    return `
+      <div style="margin-bottom:20px">
+        <div style="font-size:13px;font-weight:600;text-transform:capitalize;margin-bottom:8px;color:var(--text)">${nombreMes}</div>
+        <div class="cal-grid">${headerDias}${cells}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="stat-card" style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:14px">📆 Calendario de vencimientos <span style="font-size:11px;color:var(--muted);font-weight:400">(celdas naranjas = hay cheques · clic para ver detalle)</span></div>
+      ${mesesHtml}
+    </div>`;
 }
 
-function modalNuevoCheque(){
+function buildTablaAcumulado(cheques){
+  if(!cheques.length) return `<div class="empty">Sin cheques en el período seleccionado</div>`;
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  let acum = 0;
+  const totalGlobal = cheques.reduce((s,c)=>s+parseFloat(c.monto||0),0);
+
+  const filas = cheques.map(c=>{
+    const dias = Math.round((new Date(c.fecha_vencimiento+'T00:00:00')-hoy)/86400000);
+    const monto = parseFloat(c.monto||0);
+    acum += monto;
+    const pctAcum = totalGlobal>0 ? (acum/totalGlobal*100).toFixed(1) : 0;
+    const colorDias = dias<0?'var(--muted)':dias===0?'var(--warn)':dias<=3?'var(--warn)':dias<=7?'var(--orange)':'var(--text)';
+    const diasStr = dias<0?'Vencido':dias===0?'HOY':dias+'d';
+    const est = CH_ESTADOS[c.estado]||{label:c.estado};
+    return `<tr>
+      <td class="muted" style="font-size:11px">${c.fecha_vencimiento}</td>
+      <td><strong class="mono">${c.numero}</strong></td>
+      <td>${c.banco}${c.sucursal?' ('+c.sucursal+')':''}</td>
+      <td>${c.beneficiario}</td>
+      <td class="mono">$${monto.toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+      <td><span style="font-family:var(--mono);font-weight:700;color:${colorDias}">${diasStr}</span></td>
+      <td><span class="badge b-${c.estado}">${est.label}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="acum-bar" style="width:${Math.max(4,parseFloat(pctAcum)*.8}px;min-width:4px"></div>
+          <span class="mono" style="font-size:11px;color:var(--muted)">$${acum.toLocaleString('es-AR',{minimumFractionDigits:0})} <span style="color:var(--muted)">(${pctAcum}%)</span></span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div class="stat-card">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px">📋 Detalle ordenado por vencimiento con acumulado</div>
+      <div class="table-wrap" style="overflow-x:auto"><table>
+        <thead><tr><th>Vencimiento</th><th>N° Cheque</th><th>Banco</th><th>Beneficiario</th><th>Monto</th><th>Días</th><th>Estado</th><th>Acumulado</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table></div>
+      <div style="text-align:right;margin-top:12px;font-family:var(--mono);font-size:14px;font-weight:700;color:var(--orange)">
+        TOTAL: $${totalGlobal.toLocaleString('es-AR',{minimumFractionDigits:2})}
+      </div>
+    </div>`;
+}
+
+function verChequesDelDia(fechaStr){
+  const todos = window._chTodos || [];
+  const del_dia = todos.filter(c=>c.fecha_vencimiento===fechaStr && ['emitido','en_transito'].includes(c.estado));
+  if(!del_dia.length) return;
+  const total = del_dia.reduce((s,c)=>s+parseFloat(c.monto||0),0);
+  const filas = del_dia.map(c=>`<tr>
+    <td class="mono"><strong>${c.numero}</strong></td>
+    <td>${c.banco}</td>
+    <td>${c.beneficiario}</td>
+    <td class="mono">$${parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+    <td><span class="badge b-${c.estado}">${CH_ESTADOS[c.estado]?.label||c.estado}</span></td>
+  </tr>`).join('');
   openModal(`
-    <h3>Nuevo cheque emitido</h3>
-    ${_formCheque()}
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="crearCheque()">Guardar</button>
-    </div>`);
+    <h3>Cheques que vencen el ${fechaStr}</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>N° Cheque</th><th>Banco</th><th>Beneficiario</th><th>Monto</th><th>Estado</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table></div>
+    <div style="text-align:right;margin-top:12px;font-family:var(--mono);font-weight:700;color:var(--orange)">Total del día: $${total.toLocaleString('es-AR',{minimumFractionDigits:2})}</div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Cerrar</button></div>`);
 }
 
-async function crearCheque(){
-  const p = _payloadCheque();
-  if(!_validarCheque(p)) return;
-  try{
-    await api('/api/v1/cheques-emitidos/',{method:'POST',body:JSON.stringify(p)});
-    toast('Cheque registrado');closeModal();pgCheques();
-  }catch(e){toast(e.message,'err');}
-}
 
-async function modalEditarCheque(id){
-  try{
-    const c = await api(`/api/v1/cheques-emitidos/${id}`);
-    openModal(`
-      <h3>Editar cheque N° ${c.numero}</h3>
-      ${_formCheque(c)}
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="guardarCheque('${id}')">Guardar cambios</button>
-      </div>`);
-  }catch(e){toast(e.message,'err');}
-}
-
-async function guardarCheque(id){
-  const p = _payloadCheque();
-  if(!_validarCheque(p)) return;
-  try{
-    await api(`/api/v1/cheques-emitidos/${id}`,{method:'PUT',body:JSON.stringify(p)});
-    toast('Cheque actualizado');closeModal();pgCheques();
-  }catch(e){toast(e.message,'err');}
-}
-
-function modalCambioEstadoCheque(id, estadoActual){
-  const permitidos = CH_TRANSICIONES[estadoActual]||[];
-  if(!permitidos.length){toast('No hay transiciones disponibles para este estado','err');return;}
-  openModal(`
-    <h3>Cambiar estado del cheque</h3>
-    <p class="muted" style="font-size:12px;margin-bottom:14px">Estado actual: <span class="badge b-${estadoActual}">${CH_ESTADOS[estadoActual]?.label||estadoActual}</span></p>
-    <div class="field"><label>Nuevo estado *</label>
-      <select id="ch-nuevo-estado">
-        ${permitidos.map(e=>`<option value="${e}">${CH_ESTADOS[e]?.label||e}</option>`).join('')}
-      </select>
-    </div>
-    <div class="field"><label>Observaciones</label><textarea id="ch-est-obs" rows="2"></textarea></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarEstadoCheque('${id}')">Confirmar</button>
-    </div>`);
-}
-
-async function confirmarEstadoCheque(id){
-  const estado = document.getElementById('ch-nuevo-estado').value;
-  const obs    = document.getElementById('ch-est-obs').value.trim()||null;
-  try{
-    await api(`/api/v1/cheques-emitidos/${id}/estado`,{method:'PATCH',body:JSON.stringify({estado,observaciones:obs})});
-    toast(`Cheque → ${CH_ESTADOS[estado]?.label||estado}`);closeModal();pgCheques();
-  }catch(e){toast(e.message,'err');}
-}
-
-async function eliminarCheque(id, numero){
-  if(!confirm(`¿Eliminar el cheque N° ${numero}? Esta acción no se puede deshacer.`)) return;
-  try{
-    await api(`/api/v1/cheques-emitidos/${id}`,{method:'DELETE'});
-    toast('Cheque eliminado');pgCheques();
-  }catch(e){toast(e.message,'err');}
-}
 
 // ══════════════════════════════════════════════════════════════
 //  COMING SOON
@@ -1473,3 +1624,4 @@ function pgComingSoon(){setContent('<div class="empty"><div style="font-size:32p
 </script>
 </body>
 </html>
+
