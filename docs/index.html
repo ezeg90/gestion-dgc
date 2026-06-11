@@ -1355,6 +1355,199 @@ async function pgCheques(){
   }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
+
+// ── ABM helpers ───────────────────────────────────────────────
+function renderTablaCheques(cheques){
+  if(!cheques.length) return '<div class="empty">Sin cheques registrados</div>';
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>N° Cheque</th><th>Banco</th><th>Beneficiario</th><th>Monto</th><th>Emisión</th><th>Vencimiento</th><th>Días</th><th>Estado</th><th></th></tr></thead>
+    <tbody id="tb-cheques">
+      ${cheques.map(c=>{
+        const est = CH_ESTADOS[c.estado]||{label:c.estado,color:'var(--muted)'};
+        const diasEl = c.dias_para_vencer !== null && c.dias_para_vencer !== undefined
+          ? `<span style="font-family:var(--mono);font-weight:600;color:${c.dias_para_vencer<=3?'var(--warn)':c.dias_para_vencer<=7?'var(--orange)':'var(--text)'}">${c.dias_para_vencer}d</span>`
+          : '—';
+        return `<tr>
+          <td><strong class="mono">${c.numero}</strong></td>
+          <td>${c.banco}${c.sucursal?` <span class="muted">(${c.sucursal})</span>`:''}</td>
+          <td>${c.beneficiario}</td>
+          <td class="mono">$${parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+          <td class="muted" style="font-size:12px">${c.fecha_emision}</td>
+          <td class="muted" style="font-size:12px">${c.fecha_vencimiento}</td>
+          <td>${diasEl}</td>
+          <td><span class="badge b-${c.estado}">${est.label}</span></td>
+          <td style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-sm" onclick="verCheque('${c.id}')">Ver</button>
+            <button class="btn btn-ghost btn-sm" onclick="modalEditarCheque('${c.id}')">✏️</button>
+            ${CH_TRANSICIONES[c.estado]?.length?`<button class="btn btn-success btn-sm" onclick="modalCambioEstadoCheque('${c.id}','${c.estado}')">→</button>`:''}
+            ${['emitido'].includes(c.estado)?`<button class="btn btn-danger btn-sm" onclick="eliminarCheque('${c.id}','${c.numero}')">🗑️</button>`:''}
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function recargarCheques(){
+  const estado = document.getElementById('ch-filtro-estado')?.value||'';
+  const benef  = document.getElementById('ch-filtro-benef')?.value||'';
+  let url = '/api/v1/cheques-emitidos/?';
+  if(estado) url+=`estado=${estado}&`;
+  if(benef)  url+=`beneficiario=${encodeURIComponent(benef)}&`;
+  try{
+    const cheques = await api(url);
+    window._chTodos = cheques;
+    const wrap = document.getElementById('ch-tabla-wrap');
+    if(wrap) wrap.innerHTML = renderTablaCheques(cheques);
+  }catch(e){toast(e.message,'err');}
+}
+
+async function verCheque(id){
+  try{
+    const c = await api(`/api/v1/cheques-emitidos/${id}`);
+    const est = CH_ESTADOS[c.estado]||{label:c.estado,color:'var(--muted)'};
+    const diasTxt = c.dias_para_vencer!=null ? `${c.dias_para_vencer} días` : '—';
+    openModal(`
+      <h3>Cheque N° ${c.numero}</h3>
+      <div class="detail-grid" style="margin-bottom:14px">
+        <div class="detail-item"><span>Banco</span>${c.banco}${c.sucursal?` (${c.sucursal})`:''}</div>
+        <div class="detail-item"><span>Beneficiario</span><strong>${c.beneficiario}</strong></div>
+        <div class="detail-item"><span>Monto</span><strong class="mono" style="font-size:16px">$${parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})}</strong></div>
+        <div class="detail-item"><span>Estado</span><span class="badge b-${c.estado}">${est.label}</span></div>
+        <div class="detail-item"><span>Fecha de emisión</span>${c.fecha_emision}</div>
+        <div class="detail-item"><span>Fecha de vencimiento</span>${c.fecha_vencimiento}</div>
+        <div class="detail-item"><span>Días para vencer</span>${diasTxt}</div>
+        ${c.concepto?`<div class="detail-item"><span>Concepto</span>${c.concepto}</div>`:''}
+        ${c.observaciones?`<div class="detail-item" style="grid-column:1/-1"><span>Observaciones</span>${c.observaciones}</div>`:''}
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
+        <button class="btn btn-ghost btn-sm" onclick="modalEditarCheque('${c.id}')">Editar</button>
+        ${CH_TRANSICIONES[c.estado]?.length?`<button class="btn btn-primary btn-sm" onclick="modalCambioEstadoCheque('${c.id}','${c.estado}')">Cambiar estado</button>`:''}
+      </div>`);
+  }catch(e){toast(e.message,'err');}
+}
+
+function _formCheque(datos=null){
+  const hoy = new Date().toISOString().split('T')[0];
+  return `
+    <div class="form-row">
+      <div class="field"><label>N° de Cheque *</label><input id="ch-numero" value="${datos?.numero||''}" placeholder="12345678"/></div>
+      <div class="field"><label>Banco *</label><input id="ch-banco" value="${datos?.banco||''}" placeholder="Banco Nación"/></div>
+    </div>
+    <div class="form-row">
+      <div class="field"><label>Sucursal</label><input id="ch-sucursal" value="${datos?.sucursal||''}" placeholder="San Francisco"/></div>
+      <div class="field"><label>Monto *</label><input id="ch-monto" type="number" step="0.01" min="0" value="${datos?.monto||''}" placeholder="0.00"/></div>
+    </div>
+    <div class="field"><label>Beneficiario *</label><input id="ch-beneficiario" value="${datos?.beneficiario||''}" placeholder="Proveedor SA"/></div>
+    <div class="form-row">
+      <div class="field"><label>Fecha de Emisión *</label><input id="ch-femision" type="date" value="${datos?.fecha_emision||hoy}"/></div>
+      <div class="field"><label>Fecha de Vencimiento *</label><input id="ch-fvencimiento" type="date" value="${datos?.fecha_vencimiento||''}"/></div>
+    </div>
+    <div class="field"><label>Concepto</label><input id="ch-concepto" value="${datos?.concepto||''}" placeholder="Pago factura N°..."/></div>
+    <div class="field"><label>Observaciones</label><textarea id="ch-observaciones" rows="2">${datos?.observaciones||''}</textarea></div>`;
+}
+
+function _payloadCheque(){
+  return {
+    numero:            document.getElementById('ch-numero').value.trim(),
+    banco:             document.getElementById('ch-banco').value.trim(),
+    sucursal:          document.getElementById('ch-sucursal').value.trim()||null,
+    beneficiario:      document.getElementById('ch-beneficiario').value.trim(),
+    monto:             parseFloat(document.getElementById('ch-monto').value),
+    fecha_emision:     document.getElementById('ch-femision').value,
+    fecha_vencimiento: document.getElementById('ch-fvencimiento').value,
+    concepto:          document.getElementById('ch-concepto').value.trim()||null,
+    observaciones:     document.getElementById('ch-observaciones').value.trim()||null,
+  };
+}
+
+function _validarCheque(p){
+  if(!p.numero||!p.banco||!p.beneficiario||!p.monto||!p.fecha_emision||!p.fecha_vencimiento){
+    toast('Completa los campos obligatorios (*)','err'); return false;
+  }
+  if(p.fecha_vencimiento < p.fecha_emision){
+    toast('La fecha de vencimiento no puede ser anterior a la de emision','err'); return false;
+  }
+  return true;
+}
+
+function modalNuevoCheque(){
+  openModal(`
+    <h3>Nuevo cheque emitido</h3>
+    ${_formCheque()}
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="crearCheque()">Guardar</button>
+    </div>`);
+}
+
+async function crearCheque(){
+  const p = _payloadCheque();
+  if(!_validarCheque(p)) return;
+  try{
+    await api('/api/v1/cheques-emitidos/',{method:'POST',body:JSON.stringify(p)});
+    toast('Cheque registrado');closeModal();pgCheques();
+  }catch(e){toast(e.message,'err');}
+}
+
+async function modalEditarCheque(id){
+  try{
+    const c = await api(`/api/v1/cheques-emitidos/${id}`);
+    openModal(`
+      <h3>Editar cheque N° ${c.numero}</h3>
+      ${_formCheque(c)}
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarCheque('${id}')">Guardar cambios</button>
+      </div>`);
+  }catch(e){toast(e.message,'err');}
+}
+
+async function guardarCheque(id){
+  const p = _payloadCheque();
+  if(!_validarCheque(p)) return;
+  try{
+    await api(`/api/v1/cheques-emitidos/${id}`,{method:'PUT',body:JSON.stringify(p)});
+    toast('Cheque actualizado');closeModal();pgCheques();
+  }catch(e){toast(e.message,'err');}
+}
+
+function modalCambioEstadoCheque(id, estadoActual){
+  const permitidos = CH_TRANSICIONES[estadoActual]||[];
+  if(!permitidos.length){toast('No hay transiciones disponibles','err');return;}
+  openModal(`
+    <h3>Cambiar estado del cheque</h3>
+    <p class="muted" style="font-size:12px;margin-bottom:14px">Estado actual: <span class="badge b-${estadoActual}">${CH_ESTADOS[estadoActual]?.label||estadoActual}</span></p>
+    <div class="field"><label>Nuevo estado *</label>
+      <select id="ch-nuevo-estado">
+        ${permitidos.map(e=>`<option value="${e}">${CH_ESTADOS[e]?.label||e}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Observaciones</label><textarea id="ch-est-obs" rows="2"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarEstadoCheque('${id}')">Confirmar</button>
+    </div>`);
+}
+
+async function confirmarEstadoCheque(id){
+  const estado = document.getElementById('ch-nuevo-estado').value;
+  const obs    = document.getElementById('ch-est-obs').value.trim()||null;
+  try{
+    await api(`/api/v1/cheques-emitidos/${id}/estado`,{method:'PATCH',body:JSON.stringify({estado,observaciones:obs})});
+    toast(`Cheque cambiado a ${CH_ESTADOS[estado]?.label||estado}`);closeModal();pgCheques();
+  }catch(e){toast(e.message,'err');}
+}
+
+async function eliminarCheque(id, numero){
+  if(!confirm(`Eliminar el cheque N° ${numero}? Esta accion no se puede deshacer.`)) return;
+  try{
+    await api(`/api/v1/cheques-emitidos/${id}`,{method:'DELETE'});
+    toast('Cheque eliminado');pgCheques();
+  }catch(e){toast(e.message,'err');}
+}
+
 // ── CARTERA ───────────────────────────────────────────────────
 function renderCartera(){
   const todos = window._chTodos || [];
@@ -1573,7 +1766,7 @@ function buildTablaAcumulado(cheques){
       <td><span class="badge b-${c.estado}">${est.label}</span></td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
-          <div class="acum-bar" style="width:${Math.max(4,parseFloat(pctAcum)*.8}px;min-width:4px"></div>
+          <div class="acum-bar" style="width:${Math.max(4,parseFloat(pctAcum)*.8)}px;min-width:4px"></div>
           <span class="mono" style="font-size:11px;color:var(--muted)">$${acum.toLocaleString('es-AR',{minimumFractionDigits:0})} <span style="color:var(--muted)">(${pctAcum}%)</span></span>
         </div>
       </td>
@@ -1624,4 +1817,3 @@ function pgComingSoon(){setContent('<div class="empty"><div style="font-size:32p
 </script>
 </body>
 </html>
-
