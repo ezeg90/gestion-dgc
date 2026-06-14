@@ -73,6 +73,14 @@ td{padding:11px 14px;vertical-align:middle}
 .b-debitado{background:rgba(0,212,170,.12);color:var(--accent2)}
 .b-rechazado{background:rgba(255,107,107,.12);color:var(--warn)}
 .b-anulado{background:rgba(123,130,160,.12);color:var(--muted)}
+.b-en_ventana{background:rgba(168,85,247,.12);color:#a855f7}
+.b-vencido_sin_depositar{background:rgba(255,107,107,.18);color:var(--warn);border:1px solid rgba(255,107,107,.3)}
+/* ── Circulación ── */
+.ventana-bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:4px}
+.ventana-bar{height:100%;border-radius:4px;transition:width .4s}
+.circ-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:10px}
+.circ-card.critico{border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.04)}
+.circ-card.proximo{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.03)}
 .stats-row{display:grid;gap:14px;margin-bottom:24px}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
 .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
@@ -275,7 +283,7 @@ async function pgDashboard(){
     const facturado=pedidos.filter(p=>p.estado==='entregado').reduce((s,p)=>s+parseFloat(p.total||0),0);
     const hoy=new Date(); hoy.setHours(0,0,0,0);
     const en30=new Date(hoy); en30.setDate(en30.getDate()+30);
-    const chActivos=cheques.filter(c=>['emitido','en_transito'].includes(c.estado));
+    const chActivos=cheques.filter(c=>['emitido','en_transito','en_ventana'].includes(c.estado));
     const chProx7=chActivos.filter(c=>{const d=new Date(c.fecha_vencimiento+'T00:00:00');return d>=hoy&&d<=new Date(hoy.getTime()+7*86400000);});
     const chProx30=chActivos.filter(c=>{const d=new Date(c.fecha_vencimiento+'T00:00:00');return d>=hoy&&d<=en30;});
     const totalProx30=chProx30.reduce((s,c)=>s+parseFloat(c.monto||0),0);
@@ -1278,19 +1286,23 @@ async function aplicarFiltro(){
 //  CHEQUES EMITIDOS
 // ══════════════════════════════════════════════════════════════
 const CH_ESTADOS = {
-  emitido:     { label: 'Emitido',     color: 'var(--accent)'  },
-  en_transito: { label: 'En tránsito', color: 'var(--orange)'  },
-  debitado:    { label: 'Debitado',    color: 'var(--accent2)' },
-  rechazado:   { label: 'Rechazado',   color: 'var(--warn)'    },
-  anulado:     { label: 'Anulado',     color: 'var(--muted)'   },
+  emitido:               { label: 'Emitido',               color: 'var(--accent)'  },
+  en_transito:           { label: 'En tránsito',           color: 'var(--orange)'  },
+  en_ventana:            { label: 'En ventana',            color: '#a855f7'        },
+  debitado:              { label: 'Debitado',              color: 'var(--accent2)' },
+  rechazado:             { label: 'Rechazado',             color: 'var(--warn)'    },
+  vencido_sin_depositar: { label: 'Vencido sin depositar', color: 'var(--warn)'    },
+  anulado:               { label: 'Anulado',               color: 'var(--muted)'   },
 };
 
 const CH_TRANSICIONES = {
-  emitido:     ['en_transito', 'anulado'],
-  en_transito: ['debitado', 'rechazado', 'anulado'],
-  rechazado:   ['en_transito'],
-  debitado:    [],
-  anulado:     [],
+  emitido:               ['en_transito', 'anulado'],
+  en_transito:           ['en_ventana', 'rechazado', 'anulado'],
+  en_ventana:            ['debitado', 'vencido_sin_depositar', 'rechazado'],
+  rechazado:             ['en_transito'],
+  debitado:              [],
+  vencido_sin_depositar: [],
+  anulado:               [],
 };
 
 // Pestaña activa: 'abm' | 'cartera'
@@ -1299,9 +1311,11 @@ let _chTab = 'abm';
 function switchTabCheques(tab){
   _chTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  document.getElementById('ch-pane-abm').style.display   = tab==='abm'    ? '' : 'none';
-  document.getElementById('ch-pane-cartera').style.display = tab==='cartera' ? '' : 'none';
-  if(tab==='cartera') renderCartera();
+  document.getElementById('ch-pane-abm').style.display         = tab==='abm'         ? '' : 'none';
+  document.getElementById('ch-pane-cartera').style.display     = tab==='cartera'     ? '' : 'none';
+  document.getElementById('ch-pane-circulacion').style.display = tab==='circulacion' ? '' : 'none';
+  if(tab==='cartera')     renderCartera();
+  if(tab==='circulacion') renderCirculacion();
 }
 
 async function pgCheques(){
@@ -1324,6 +1338,7 @@ async function pgCheques(){
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="abm" onclick="switchTabCheques('abm')">📋 ABM Cheques</button>
         <button class="tab-btn" data-tab="cartera" onclick="switchTabCheques('cartera')">📊 Cartera / Vencimientos</button>
+        <button class="tab-btn" data-tab="circulacion" onclick="switchTabCheques('circulacion')">🔄 Circulación</button>
       </div>
 
       <!-- PANE ABM -->
@@ -1349,6 +1364,11 @@ async function pgCheques(){
       <!-- PANE CARTERA -->
       <div id="ch-pane-cartera" style="display:none">
         <div id="cartera-content"><div class="loading-page"><div class="spinner"></div> Cargando cartera…</div></div>
+      </div>
+
+      <!-- PANE CIRCULACIÓN -->
+      <div id="ch-pane-circulacion" style="display:none">
+        <div id="circulacion-content"><div class="loading-page"><div class="spinner"></div> Cargando circulación…</div></div>
       </div>`);
 
     _chTab = 'abm';
@@ -1551,7 +1571,7 @@ async function eliminarCheque(id, numero){
 // ── CARTERA ───────────────────────────────────────────────────
 function renderCartera(){
   const todos = window._chTodos || [];
-  const activos = todos.filter(c=>['emitido','en_transito'].includes(c.estado));
+  const activos = todos.filter(c=>['emitido','en_transito','en_ventana'].includes(c.estado));
 
   // Defaults de rango: hoy + 60 días
   const hoy = new Date(); hoy.setHours(0,0,0,0);
@@ -1605,7 +1625,7 @@ function actualizarCartera(){
   if(hasta < desde){ toast('La fecha hasta debe ser mayor a la fecha desde','err'); return; }
 
   const todos   = window._chTodos || [];
-  const activos = todos.filter(c=>['emitido','en_transito'].includes(c.estado));
+  const activos = todos.filter(c=>['emitido','en_transito','en_ventana'].includes(c.estado));
   const enRango = activos.filter(c=>{
     const d = new Date(c.fecha_vencimiento+'T00:00:00');
     return d >= desde && d <= hasta;
@@ -1810,6 +1830,131 @@ function verChequesDelDia(fechaStr){
 
 
 
+// ── CIRCULACIÓN ──────────────────────────────────────────────
+async function renderCirculacion(){
+  const el = document.getElementById('circulacion-content');
+  if(!el) return;
+  el.innerHTML = '<div class="loading-page"><div class="spinner"></div> Cargando…</div>';
+  try{
+    const data = await api('/api/v1/cheques-emitidos/circulacion');
+    const r = data.resumen;
+    const enVentana   = data.en_ventana   || [];
+    const proximos    = data.proximos_a_entrar || [];
+
+    // ── Cards resumen
+    const colorCrit = r.cheques_criticos > 0 ? 'var(--warn)' : 'var(--accent2)';
+    const cards = `
+      <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="stat-card">
+          <div class="stat-label">💜 En ventana activa</div>
+          <div class="stat-value" style="color:#a855f7;font-size:22px">${r.total_en_ventana}</div>
+          <div class="stat-sub">$${r.monto_en_ventana.toLocaleString('es-AR',{minimumFractionDigits:0})} en calle</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">🟠 Próximos a entrar</div>
+          <div class="stat-value" style="color:var(--orange);font-size:22px">${r.total_proximos_ventana}</div>
+          <div class="stat-sub">$${r.monto_proximos_ventana.toLocaleString('es-AR',{minimumFractionDigits:0})} comprometido</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">⏱ Días prom. en ventana</div>
+          <div class="stat-value" style="font-size:22px">${r.dias_promedio_en_ventana ?? '—'}</div>
+          <div class="stat-sub">de 30 días disponibles</div>
+        </div>
+        <div class="stat-card ${r.cheques_criticos > 0 ? 'circ-card critico' : ''}">
+          <div class="stat-label">🚨 Críticos (≤5 días)</div>
+          <div class="stat-value" style="color:${colorCrit};font-size:22px">${r.cheques_criticos}</div>
+          <div class="stat-sub">$${r.monto_critico.toLocaleString('es-AR',{minimumFractionDigits:0})} en riesgo</div>
+        </div>
+      </div>`;
+
+    // ── Sección En ventana activa
+    const ventanaHtml = enVentana.length ? `
+      <div class="stat-card" style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;color:#a855f7;margin-bottom:14px">
+          💜 En ventana activa — pueden depositarse ahora
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">ordenados por fecha límite (más urgentes primero)</span>
+        </div>
+        ${enVentana.map(c => {
+          const pct = c.porcentaje_ventana || 0;
+          const diasRest = c.dias_restantes_cobro ?? 0;
+          const barColor = diasRest <= 3 ? '#ff6b6b' : diasRest <= 7 ? '#f59e0b' : '#a855f7';
+          const cardClass = diasRest <= 5 ? 'circ-card critico' : 'circ-card';
+          return `<div class="${cardClass}" style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+              <div>
+                <span class="mono" style="font-weight:700;font-size:14px">N° ${c.numero}</span>
+                <span style="margin-left:10px;color:var(--muted);font-size:12px">${c.banco}${c.sucursal ? ' ('+c.sucursal+')' : ''}</span>
+                <div style="margin-top:4px;font-size:13px"><strong>${c.beneficiario}</strong></div>
+                ${c.concepto ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${c.concepto}</div>` : ''}
+              </div>
+              <div style="text-align:right">
+                <div class="mono" style="font-size:18px;font-weight:700;color:#a855f7">$${parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})}</div>
+                <div style="font-size:11px;color:var(--muted)">venció ${c.fecha_vencimiento} · límite ${c.fecha_limite_deposito}</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px">
+                  <span>Día ${c.dias_en_ventana} de 30 en ventana</span>
+                  <span style="color:${barColor};font-weight:700">${diasRest > 0 ? diasRest+'d restantes' : '¡VENCE HOY!'}</span>
+                </div>
+                <div class="ventana-bar-wrap">
+                  <div class="ventana-bar" style="width:${pct}%;background:${barColor}"></div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="modalCambioEstadoCheque('${c.id}','en_ventana')">→ Estado</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : `<div class="stat-card" style="margin-bottom:16px;text-align:center;color:var(--accent2);padding:24px">✓ No hay cheques en ventana activa</div>`;
+
+    // ── Sección Próximos a entrar
+    const proximosHtml = proximos.length ? `
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:14px">
+          🟠 Próximos a entrar en ventana — en tránsito, vencen en ≤7 días
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>N° Cheque</th><th>Banco</th><th>Beneficiario</th><th>Monto</th><th>Vence</th><th>Días para entrar</th><th></th></tr></thead>
+          <tbody>
+            ${proximos.map(c => {
+              const dias = c.dias_para_vencer ?? 0;
+              const color = dias <= 0 ? 'var(--warn)' : dias <= 3 ? 'var(--warn)' : 'var(--orange)';
+              const label = dias < 0 ? 'Venció hace '+Math.abs(dias)+'d' : dias === 0 ? 'HOY' : 'En '+dias+'d';
+              return `<tr>
+                <td class="mono"><strong>${c.numero}</strong></td>
+                <td>${c.banco}${c.sucursal ? ' ('+c.sucursal+')' : ''}</td>
+                <td>${c.beneficiario}</td>
+                <td class="mono">$${parseFloat(c.monto).toLocaleString('es-AR',{minimumFractionDigits:2})}</td>
+                <td class="muted" style="font-size:12px">${c.fecha_vencimiento}</td>
+                <td><span style="font-family:var(--mono);font-weight:700;color:${color}">${label}</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="modalCambioEstadoCheque('${c.id}','en_transito')">→ Estado</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>
+        <div style="text-align:right;margin-top:10px;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--orange)">
+          Total próximos: $${r.monto_proximos_ventana.toLocaleString('es-AR',{minimumFractionDigits:2})}
+        </div>
+      </div>` : `<div class="stat-card" style="text-align:center;color:var(--accent2);padding:24px">✓ No hay cheques próximos a entrar en ventana</div>`;
+
+    el.innerHTML = `
+      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;font-weight:600">🔄 Reporte de Circulación</div>
+          <div style="font-size:12px;color:var(--muted)">Cheques en calle — ventana de cobro activa y próximos a activarse</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="renderCirculacion()">↻ Actualizar</button>
+      </div>
+      ${cards}
+      ${ventanaHtml}
+      ${proximosHtml}`;
+
+  }catch(e){
+    el.innerHTML = `<div class="empty">⚠️ ${e.message}</div>`;
+  }
+}
+
 // ══════════════════════════════════════════════════════════════
 //  COMING SOON
 // ══════════════════════════════════════════════════════════════
@@ -1817,3 +1962,4 @@ function pgComingSoon(){setContent('<div class="empty"><div style="font-size:32p
 </script>
 </body>
 </html>
+
