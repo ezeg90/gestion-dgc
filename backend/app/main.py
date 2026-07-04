@@ -13,6 +13,8 @@ from app.modules.pedidos.model import Pedido, PedidoItem
 from app.modules.remitos.model import Remito, RemitoPedido
 from app.modules.cuentas_corrientes.model import CuentaCorriente, MovimientoCuentaCorriente
 from app.modules.cheques.model import ChequeEmitido
+from app.modules.proveedores.model import Proveedor, CuentaCorrienteProveedor, MovimientoCCProveedor
+from app.modules.gastos.model import Gasto
 
 # Routers
 from app.modules.usuarios.router import router as usuarios_router
@@ -23,6 +25,8 @@ from app.modules.pedidos.router import router as pedidos_router
 from app.modules.remitos.router import router as remitos_router
 from app.modules.cuentas_corrientes.router import router as cuentas_router
 from app.modules.cheques.router import router as cheques_router
+from app.modules.proveedores.router import router as proveedores_router
+from app.modules.gastos.router import router as gastos_router
 
 app = FastAPI(
     title="Sistema de Gestión DGC",
@@ -55,7 +59,8 @@ app.include_router(pedidos_router,   prefix="/api/v1")
 app.include_router(remitos_router,   prefix="/api/v1")
 app.include_router(cuentas_router,   prefix="/api/v1")
 app.include_router(cheques_router,   prefix="/api/v1")
-
+app.include_router(proveedores_router, prefix="/api/v1")
+app.include_router(gastos_router,      prefix="/api/v1")
 
 @app.get("/", tags=["Health"])
 def health_check():
