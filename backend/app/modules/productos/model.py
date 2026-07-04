@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -13,11 +13,16 @@ class Producto(Base):
     id            = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nombre        = Column(String(200), nullable=False)
     descripcion   = Column(String, nullable=True)
+    tipo          = Column(String(20), nullable=False, default="producto")  # producto | servicio
     unidad_medida = Column(String(30), nullable=False, default="unidad")
-    categoria     = Column(String(100), nullable=True)   # ej: carnicos, repuestos, servicios
-    subcategoria  = Column(String(100), nullable=True)   # ej: cortes_vaca, embutidos, fiambres
+    categoria     = Column(String(100), nullable=True)   # ej: carnicos, repuestos, mano_de_obra
+    subcategoria  = Column(String(100), nullable=True)   # ej: cortes_vaca, diagnostico, instalacion
     activo        = Column(Boolean, nullable=False, default=True)
     created_at    = Column(DateTime(timezone=True), server_default=func.now())
     updated_at    = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     precios = relationship("ListaPreciosItem", back_populates="producto")
+
+    __table_args__ = (
+        CheckConstraint("tipo IN ('producto', 'servicio')", name="chk_productos_tipo"),
+    )

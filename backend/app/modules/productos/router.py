@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.modules.productos.model import Producto
-from app.modules.productos.schemas import ProductoCreate, ProductoUpdate, ProductoOut
+from app.modules.productos.schemas import ProductoCreate, ProductoUpdate, ProductoOut, TipoArticulo
 from app.modules.usuarios.model import Usuario
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
@@ -14,12 +14,15 @@ router = APIRouter(prefix="/productos", tags=["Productos"])
 @router.get("/", response_model=List[ProductoOut])
 def listar_productos(
     solo_activos: bool = True,
+    tipo: Optional[TipoArticulo] = None,
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
     query = db.query(Producto)
     if solo_activos:
         query = query.filter(Producto.activo == True)
+    if tipo:
+        query = query.filter(Producto.tipo == tipo)
     return query.order_by(Producto.nombre).all()
 
 
