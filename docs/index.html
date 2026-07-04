@@ -67,6 +67,8 @@ td{padding:11px 14px;vertical-align:middle}
 .b-mayorista{background:rgba(79,124,255,.12);color:var(--accent)}
 .b-minorista{background:rgba(0,212,170,.12);color:var(--accent2)}
 .b-especial{background:rgba(245,158,11,.12);color:var(--orange)}
+.b-producto{background:rgba(123,130,160,.12);color:var(--muted)}
+.b-servicio{background:rgba(168,85,247,.12);color:#a855f7}
 /* ── Cheques badges ── */
 .b-emitido{background:rgba(79,124,255,.12);color:var(--accent)}
 .b-en_transito{background:rgba(245,158,11,.12);color:var(--orange)}
@@ -497,52 +499,97 @@ async function pgProductos(){
   document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevoProducto()">+ Nuevo producto</button>`;
   try{
     const rows=await api('/api/v1/productos/?solo_activos=false');
-    setContent(`
-      <div class="section-header">
-        <h3>${rows.length} productos</h3>
-        <input class="search-input" placeholder="Buscar…" oninput="filtrar(this.value,'tb-prod')"/>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Nombre</th><th>Descripción</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
-        <tbody id="tb-prod">
-          ${rows.map(p=>`<tr>
+    window._prodTipoFiltro=window._prodTipoFiltro||'todos';
+    const pintar=()=>{
+      const f=window._prodTipoFiltro;
+      const filtradas=f==='todos'?rows:rows.filter(p=>p.tipo===f);
+      document.getElementById('tb-prod').innerHTML=filtradas.map(p=>`<tr>
             <td><strong>${p.nombre}</strong></td>
+            <td>${badge(p.tipo)}</td>
             <td class="muted">${p.descripcion||'—'}</td>
             <td class="mono">${p.unidad_medida}</td>
             <td>${badge(p.activo?'activo':'inactivo')}</td>
-            <td><button class="btn btn-ghost btn-sm" onclick="modalEditarProducto('${p.id}','${p.nombre.replace(/'/g,"\\'")}','${(p.descripcion||'').replace(/'/g,"\\'")}','${p.unidad_medida}',${p.activo})">Editar</button></td>
-          </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin productos</td></tr>'}
-        </tbody>
+            <td><button class="btn btn-ghost btn-sm" onclick="modalEditarProducto('${p.id}','${p.nombre.replace(/'/g,"\\'")}','${(p.descripcion||'').replace(/'/g,"\\'")}','${p.tipo}','${p.unidad_medida}',${p.activo})">Editar</button></td>
+          </tr>`).join('')||'<tr><td colspan="6" class="empty">Sin productos</td></tr>';
+      document.getElementById('cnt-prod').textContent=filtradas.length;
+    };
+    setContent(`
+      <div class="section-header">
+        <h3><span id="cnt-prod">${rows.length}</span> productos</h3>
+        <div style="display:flex;gap:10px;align-items:center">
+          <select id="prod-tipo-filtro" onchange="window._prodTipoFiltro=this.value;pintarProductos()">
+            <option value="todos">Todos los tipos</option>
+            <option value="producto">Solo productos</option>
+            <option value="servicio">Solo servicios</option>
+          </select>
+          <input class="search-input" placeholder="Buscar…" oninput="filtrar(this.value,'tb-prod')"/>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Descripción</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="tb-prod"></tbody>
       </table></div>`);
+    window.pintarProductos=pintar;
+    pintar();
   }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
 }
 
 async function modalNuevoProducto(){
   openModal(`
     <h3>Nuevo producto</h3>
-    <div class="field"><label>Nombre *</label><input id="fp-nombre" placeholder="Ej: Chorizo del Bueno"/></div>
+    <div class="field"><label>Tipo *</label>
+      <select id="fp-tipo" onchange="toggleUnidadServicio('fp-tipo','fp-unidad')">
+        <option value="producto">Producto</option>
+        <option value="servicio">Servicio</option>
+      </select>
+    </div>
+    <div class="field"><label>Nombre *</label><input id="fp-nombre" placeholder="Ej: Chorizo del Bueno / Cambio de correa"/></div>
     <div class="field"><label>Descripción</label><textarea id="fp-desc" rows="2"></textarea></div>
     <div class="field"><label>Unidad de medida</label>
       <select id="fp-unidad">
         <option value="unidad">Unidad</option><option value="kg">Kg</option>
         <option value="litro">Litro</option><option value="docena">Docena</option><option value="caja">Caja</option>
+        <option value="hora">Hora</option><option value="trabajo">Trabajo</option>
       </select>
     </div>
+    <div class="field"><label>Categoría</label><input id="fp-cat" placeholder="Ej: carnicos, repuestos, mano_de_obra"/></div>
+    <div class="field"><label>Subcategoría</label><input id="fp-subcat" placeholder="Ej: cortes_vaca, diagnostico"/></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="crearProducto()">Crear</button>
     </div>`);
 }
 
+function toggleUnidadServicio(tipoSelId,unidadSelId){
+  const tipo=document.getElementById(tipoSelId).value;
+  const unidadSel=document.getElementById(unidadSelId);
+  if(tipo==='servicio'&&(unidadSel.value==='kg'||unidadSel.value==='litro'||unidadSel.value==='docena'||unidadSel.value==='caja')){
+    unidadSel.value='hora';
+  }
+}
+
 async function crearProducto(){
-  const b={nombre:document.getElementById('fp-nombre').value,descripcion:document.getElementById('fp-desc').value||null,unidad_medida:document.getElementById('fp-unidad').value};
+  const b={
+    nombre:document.getElementById('fp-nombre').value,
+    descripcion:document.getElementById('fp-desc').value||null,
+    tipo:document.getElementById('fp-tipo').value,
+    unidad_medida:document.getElementById('fp-unidad').value,
+    categoria:document.getElementById('fp-cat').value||null,
+    subcategoria:document.getElementById('fp-subcat').value||null,
+  };
   if(!b.nombre){toast('El nombre es obligatorio','err');return;}
   try{await api('/api/v1/productos/',{method:'POST',body:JSON.stringify(b)});toast('Producto creado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
 }
 
-async function modalEditarProducto(id,nombre,desc,unidad,activo){
+async function modalEditarProducto(id,nombre,desc,tipo,unidad,activo){
   openModal(`
     <h3>Editar producto</h3>
+    <div class="field"><label>Tipo *</label>
+      <select id="fep-tipo">
+        <option value="producto" ${tipo==='producto'?'selected':''}>Producto</option>
+        <option value="servicio" ${tipo==='servicio'?'selected':''}>Servicio</option>
+      </select>
+    </div>
     <div class="field"><label>Nombre *</label><input id="fep-nombre" value="${nombre}"/></div>
     <div class="field"><label>Descripción</label><textarea id="fep-desc" rows="2">${desc}</textarea></div>
     <div class="field"><label>Unidad de medida</label>
@@ -552,6 +599,8 @@ async function modalEditarProducto(id,nombre,desc,unidad,activo){
         <option value="litro" ${unidad==='litro'?'selected':''}>Litro</option>
         <option value="docena" ${unidad==='docena'?'selected':''}>Docena</option>
         <option value="caja" ${unidad==='caja'?'selected':''}>Caja</option>
+        <option value="hora" ${unidad==='hora'?'selected':''}>Hora</option>
+        <option value="trabajo" ${unidad==='trabajo'?'selected':''}>Trabajo</option>
       </select>
     </div>
     <div class="field"><label>Estado</label>
@@ -567,7 +616,13 @@ async function modalEditarProducto(id,nombre,desc,unidad,activo){
 }
 
 async function guardarProducto(id){
-  const b={nombre:document.getElementById('fep-nombre').value,descripcion:document.getElementById('fep-desc').value||null,unidad_medida:document.getElementById('fep-unidad').value,activo:document.getElementById('fep-activo').value==='true'};
+  const b={
+    nombre:document.getElementById('fep-nombre').value,
+    descripcion:document.getElementById('fep-desc').value||null,
+    tipo:document.getElementById('fep-tipo').value,
+    unidad_medida:document.getElementById('fep-unidad').value,
+    activo:document.getElementById('fep-activo').value==='true',
+  };
   try{await api(`/api/v1/productos/${id}`,{method:'PATCH',body:JSON.stringify(b)});toast('Producto actualizado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
 }
 
@@ -2369,5 +2424,8 @@ function pgComingSoon(){setContent('<div class="empty"><div style="font-size:32p
 </script>
 </body>
 </html>
+
+
+
 
 
