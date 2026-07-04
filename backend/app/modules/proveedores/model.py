@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, Text, Enum as SAEnum, TIMESTAMP, func
+from sqlalchemy import Column, String, Numeric, Text, Enum as SAEnum, TIMESTAMP, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -61,7 +61,7 @@ class CuentaCorrienteProveedor(Base):
     __tablename__ = "cuentas_corrientes_proveedores"
 
     id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    proveedor_id   = Column(UUID(as_uuid=True),
+    proveedor_id   = Column(UUID(as_uuid=True), ForeignKey("proveedores.id", ondelete="CASCADE"),
                             nullable=False, unique=True)
     saldo_actual   = Column(Numeric(14, 2), nullable=False, default=0)
     limite_credito = Column(Numeric(14, 2), nullable=False, default=0)
@@ -80,7 +80,7 @@ class MovimientoCCProveedor(Base):
     __tablename__ = "movimientos_cc_proveedores"
 
     id                  = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    cuenta_id           = Column(UUID(as_uuid=True), nullable=False)
+    cuenta_id           = Column(UUID(as_uuid=True), ForeignKey("cuentas_corrientes_proveedores.id", ondelete="CASCADE"), nullable=False)
     tipo                = Column(SAEnum(TipoMovimientoProveedor, name="tipo_movimiento_proveedor"),
                                  nullable=False)
     monto               = Column(Numeric(14, 2), nullable=False)

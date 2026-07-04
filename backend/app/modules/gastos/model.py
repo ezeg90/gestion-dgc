@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, Date, Text, Enum as SAEnum, TIMESTAMP, func
+from sqlalchemy import Column, String, Numeric, Date, Text, Enum as SAEnum, TIMESTAMP, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -42,7 +42,7 @@ class Gasto(Base):
 
     id                 = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     fecha              = Column(Date, nullable=False)
-    proveedor_id       = Column(UUID(as_uuid=True), nullable=True)
+    proveedor_id       = Column(UUID(as_uuid=True), ForeignKey("proveedores.id", ondelete="SET NULL"), nullable=True)
     tipo_comprobante   = Column(SAEnum(TipoComprobanteGasto, name="tipo_comprobante_gasto"),
                                 nullable=False, default=TipoComprobanteGasto.factura_a)
     numero_comprobante = Column(String(50), nullable=True)
@@ -52,7 +52,7 @@ class Gasto(Base):
     monto              = Column(Numeric(14, 2), nullable=False)
     forma_pago         = Column(SAEnum(FormaPagoGasto, name="forma_pago_gasto"),
                                 nullable=False, default=FormaPagoGasto.transferencia)
-    cheque_id          = Column(UUID(as_uuid=True), nullable=True)
+    cheque_id          = Column(UUID(as_uuid=True), ForeignKey("cheques_emitidos.id", ondelete="SET NULL"), nullable=True)
     estado             = Column(SAEnum(EstadoGasto, name="estado_gasto"),
                                 nullable=False, default=EstadoGasto.pendiente)
     observaciones      = Column(Text, nullable=True)
