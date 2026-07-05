@@ -197,6 +197,7 @@ td{padding:11px 14px;vertical-align:middle}
     <div class="nav-item" data-page="cheques" onclick="goTo(this)"><span class="nav-icon">🏦</span>Cheques emitidos</div>
     <div class="nav-item" data-page="proveedores" onclick="goTo(this)"><span class="nav-icon">🏭</span>Proveedores</div>
     <div class="nav-item" data-page="gastos" onclick="goTo(this)"><span class="nav-icon">💸</span>Gastos</div>
+    <div class="nav-item" data-page="estadoresultados" onclick="goTo(this)"><span class="nav-icon">📊</span>Estado de Resultados</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-row">
@@ -256,8 +257,8 @@ async function api(path,opts={}){
 }
 
 // ── ROUTER ───────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',clientes:'Clientes',productos:'Productos',categorias:'Categorías',precios:'Listas de precios',pedidos:'Pedidos',remitos:'Remitos',cuentas:'Cuentas corrientes',cheques:'Cheques emitidos',proveedores:'Proveedores',gastos:'Gastos'};
-const PAGE_FNS={dashboard:pgDashboard,clientes:pgClientes,productos:pgProductos,categorias:pgCategorias,precios:pgPrecios,pedidos:pgPedidos,remitos:pgRemitos,cuentas:pgCuentas,cheques:pgCheques,proveedores:pgProveedores,gastos:pgGastos};
+const PAGE_TITLES={dashboard:'Dashboard',clientes:'Clientes',productos:'Productos',categorias:'Categorías',precios:'Listas de precios',pedidos:'Pedidos',remitos:'Remitos',cuentas:'Cuentas corrientes',cheques:'Cheques emitidos',proveedores:'Proveedores',gastos:'Gastos',estadoresultados:'Estado de Resultados'};
+const PAGE_FNS={dashboard:pgDashboard,clientes:pgClientes,productos:pgProductos,categorias:pgCategorias,precios:pgPrecios,pedidos:pgPedidos,remitos:pgRemitos,cuentas:pgCuentas,cheques:pgCheques,proveedores:pgProveedores,gastos:pgGastos,estadoresultados:pgEstadoResultados};
 function goTo(el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
@@ -688,18 +689,25 @@ async function pgProductos(){
       let filtradas=rows;
       if(ft!=='todos')filtradas=filtradas.filter(p=>p.tipo===ft);
       if(fc!=='todas')filtradas=filtradas.filter(p=>p.categoria_nombre===fc);
+      const sinCosto=rows.filter(p=>p.activo&&(p.costo_unitario===null||p.costo_unitario===undefined)).length;
       document.getElementById('tb-prod').innerHTML=filtradas.map(p=>{
         const catLabel=p.subcategoria_nombre?`${p.categoria_nombre} › ${p.subcategoria_nombre}`:(p.categoria_nombre||'—');
+        const costoLabel=(p.costo_unitario===null||p.costo_unitario===undefined)
+          ?`<span style="color:var(--warn)" title="Sin costo cargado — el Estado de Resultados no va a poder calcular el margen de este ítem">— sin cargar</span>`
+          :`$${Number(p.costo_unitario).toLocaleString('es-AR',{minimumFractionDigits:2})}`;
         return `<tr>
             <td><strong>${p.nombre}</strong><div class="muted mono" style="font-size:10.5px;cursor:pointer" title="${p.id}\n(clic para copiar completo)" onclick="navigator.clipboard.writeText('${p.id}');toast('ID copiado')">${p.id.slice(0,8)}…</div></td>
             <td>${badge(p.tipo)}</td>
             <td class="muted" style="font-size:12.5px">${catLabel}</td>
             <td class="mono">${p.unidad_medida}</td>
+            <td class="mono" style="font-size:12.5px">${costoLabel}</td>
             <td>${badge(p.activo?'activo':'inactivo')}</td>
             <td><button class="btn btn-ghost btn-sm" onclick="modalEditarProducto('${p.id}')">Editar</button></td>
           </tr>`;
-      }).join('')||'<tr><td colspan="6" class="empty">Sin productos</td></tr>';
+      }).join('')||'<tr><td colspan="7" class="empty">Sin productos</td></tr>';
       document.getElementById('cnt-prod').textContent=filtradas.length;
+      document.getElementById('alerta-sin-costo').style.display=sinCosto>0?'block':'none';
+      document.getElementById('alerta-sin-costo').textContent=`⚠️ ${sinCosto} producto(s) activo(s) sin costo cargado — no van a sumar al Costo de Ventas del Estado de Resultados`;
     };
     const catsFiltro=arbol.map(c=>c.nombre);
     setContent(`
@@ -718,8 +726,9 @@ async function pgProductos(){
           <input class="search-input" placeholder="Buscar por nombre, ID, categoría…" oninput="filtrar(this.value,'tb-prod')"/>
         </div>
       </div>
+      <div id="alerta-sin-costo" class="empty" style="display:none;text-align:left;padding:10px 14px;margin-bottom:10px;background:rgba(239,68,68,.08);border-radius:8px;font-size:13px"></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Nombre / ID</th><th>Tipo</th><th>Categoría</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Nombre / ID</th><th>Tipo</th><th>Categoría</th><th>Unidad</th><th>Costo</th><th>Estado</th><th></th></tr></thead>
         <tbody id="tb-prod"></tbody>
       </table></div>`);
     window.pintarProductos=pintar;
@@ -747,6 +756,9 @@ async function modalNuevoProducto(){
     </div>
     <div class="field"><label>Categoría</label><select id="fp-cat"></select></div>
     <div class="field"><label>Subcategoría</label><select id="fp-subcat"></select></div>
+    <div class="field"><label>Costo unitario <span class="muted" style="font-weight:400">(referencia, para calcular margen)</span></label>
+      <input id="fp-costo" type="number" step="0.01" min="0" placeholder="Ej: 3000.00"/>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="crearProducto()">Crear</button>
@@ -755,12 +767,14 @@ async function modalNuevoProducto(){
 }
 
 async function crearProducto(){
+  const costo=document.getElementById('fp-costo').value;
   const b={
     nombre:document.getElementById('fp-nombre').value,
     descripcion:document.getElementById('fp-desc').value||null,
     tipo:document.getElementById('fp-tipo').value,
     unidad_medida:document.getElementById('fp-unidad').value,
     categoria_id:obtenerCategoriaIdSeleccionada('fp'),
+    costo_unitario:costo?parseFloat(costo):null,
   };
   if(!b.nombre){toast('El nombre es obligatorio','err');return;}
   try{await api('/api/v1/productos/',{method:'POST',body:JSON.stringify(b)});toast('Producto creado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
@@ -792,6 +806,9 @@ async function modalEditarProducto(id){
     </div>
     <div class="field"><label>Categoría</label><select id="fep-cat"></select></div>
     <div class="field"><label>Subcategoría</label><select id="fep-subcat"></select></div>
+    <div class="field"><label>Costo unitario <span class="muted" style="font-weight:400">(referencia, para calcular margen)</span></label>
+      <input id="fep-costo" type="number" step="0.01" min="0" value="${p.costo_unitario??''}"/>
+    </div>
     <div class="field"><label>Estado</label>
       <select id="fep-activo">
         <option value="true" ${p.activo?'selected':''}>Activo</option>
@@ -806,12 +823,14 @@ async function modalEditarProducto(id){
 }
 
 async function guardarProducto(id){
+  const costo=document.getElementById('fep-costo').value;
   const b={
     nombre:document.getElementById('fep-nombre').value,
     descripcion:document.getElementById('fep-desc').value||null,
     tipo:document.getElementById('fep-tipo').value,
     unidad_medida:document.getElementById('fep-unidad').value,
     categoria_id:obtenerCategoriaIdSeleccionada('fep'),
+    costo_unitario:costo?parseFloat(costo):null,
     activo:document.getElementById('fep-activo').value==='true',
   };
   try{await api(`/api/v1/productos/${id}`,{method:'PATCH',body:JSON.stringify(b)});toast('Producto actualizado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
@@ -2601,6 +2620,125 @@ async function anularGasto(id){
 }
 
 
+
+// ══════════════════════════════════════════════════════════════
+//  ESTADO DE RESULTADOS
+// ══════════════════════════════════════════════════════════════
+async function pgEstadoResultados(){
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-ghost" onclick="modalConfigNegocio()">⚙️ Configurar IVA</button>`;
+  const hoy=new Date();
+  if(!window._erDesde){
+    window._erDesde=new Date(hoy.getFullYear(),hoy.getMonth(),1).toISOString().split('T')[0];
+    window._erHasta=hoy.toISOString().split('T')[0];
+  }
+  await renderEstadoResultados();
+}
+
+function setPeriodoER(rango){
+  const hoy=new Date();
+  if(rango==='mes'){
+    window._erDesde=new Date(hoy.getFullYear(),hoy.getMonth(),1).toISOString().split('T')[0];
+    window._erHasta=hoy.toISOString().split('T')[0];
+  }else if(rango==='mesPasado'){
+    window._erDesde=new Date(hoy.getFullYear(),hoy.getMonth()-1,1).toISOString().split('T')[0];
+    window._erHasta=new Date(hoy.getFullYear(),hoy.getMonth(),0).toISOString().split('T')[0];
+  }else if(rango==='año'){
+    window._erDesde=new Date(hoy.getFullYear(),0,1).toISOString().split('T')[0];
+    window._erHasta=hoy.toISOString().split('T')[0];
+  }
+  renderEstadoResultados();
+}
+
+async function renderEstadoResultados(){
+  try{
+    const r=await api(`/api/v1/reportes/estado-resultados?desde=${window._erDesde}&hasta=${window._erHasta}`);
+    const d=r.devengado,p=r.percibido;
+    const fmt=(n)=>`$${Number(n).toLocaleString('es-AR',{minimumFractionDigits:2})}`;
+    const colorResultado=(n)=>Number(n)>=0?'var(--accent2)':'var(--warn)';
+    const gastosFilas=Object.entries(d.gastos_operativos).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+      `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0"><span class="muted">${CAT_LABELS[k]||k}</span><span class="mono">${fmt(v)}</span></div>`
+    ).join('')||'<div class="muted" style="font-size:12.5px">Sin gastos en el período</div>';
+
+    setContent(`
+      <div class="section-header">
+        <h3>Período</h3>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="setPeriodoER('mes')">Este mes</button>
+          <button class="btn btn-ghost btn-sm" onclick="setPeriodoER('mesPasado')">Mes pasado</button>
+          <button class="btn btn-ghost btn-sm" onclick="setPeriodoER('año')">Este año</button>
+          <input type="date" id="er-desde" value="${window._erDesde}" onchange="window._erDesde=this.value;renderEstadoResultados()"/>
+          <span class="muted">a</span>
+          <input type="date" id="er-hasta" value="${window._erHasta}" onchange="window._erHasta=this.value;renderEstadoResultados()"/>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px">
+        <div class="stat-card" style="text-align:left">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+            <strong style="font-size:15px">Devengado</strong>
+            <span class="muted" style="font-size:11.5px">Contable — lo que se vendió</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span>Ingresos brutos</span><span class="mono">${fmt(d.ingresos_brutos)}</span></div>
+          ${r.config.aplica_iva?`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;color:var(--muted)"><span>IVA débito fiscal (${Number(r.config.tasa_iva)}%)</span><span class="mono">−${fmt(d.iva_debito_fiscal)}</span></div>`:''}
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;font-weight:600;border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><span>Ingresos netos</span><span class="mono">${fmt(d.ingresos_netos)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--warn)"><span>Costo de ventas</span><span class="mono">−${fmt(d.costo_ventas)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;font-weight:600;border-top:1px solid var(--border);margin-top:4px"><span>Resultado bruto</span><span class="mono">${fmt(d.resultado_bruto)}</span></div>
+          <div style="margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--muted)">Gastos operativos</div>
+          ${gastosFilas}
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid var(--border);margin-top:4px"><span>Total gastos</span><span class="mono">−${fmt(d.gastos_operativos_total)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:16px;padding:10px 0 0;font-weight:700;border-top:2px solid var(--border);margin-top:8px">
+            <span>Resultado neto</span><span class="mono" style="color:${colorResultado(d.resultado_neto)}">${fmt(d.resultado_neto)}</span>
+          </div>
+        </div>
+
+        <div class="stat-card" style="text-align:left">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+            <strong style="font-size:15px">Percibido</strong>
+            <span class="muted" style="font-size:11.5px">Caja — lo que entró/salió</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span>Cobros a clientes</span><span class="mono">${fmt(p.cobros_clientes)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--warn)"><span>Pagos a proveedores</span><span class="mono">−${fmt(p.pagos_proveedores)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--warn)"><span>Gastos pagados</span><span class="mono">−${fmt(p.gastos_pagados)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:16px;padding:10px 0 0;font-weight:700;border-top:2px solid var(--border);margin-top:8px">
+            <span>Movimiento neto de caja</span><span class="mono" style="color:${colorResultado(p.resultado_neto)}">${fmt(p.resultado_neto)}</span>
+          </div>
+          <div class="muted" style="font-size:11.5px;margin-top:14px;line-height:1.5">
+            Este panel muestra lo que efectivamente entró y salió de la cuenta en el período — no reemplaza un Flujo de Caja Proyectado (que mira hacia adelante, con cheques y cuentas corrientes pendientes).
+          </div>
+        </div>
+      </div>
+    `);
+  }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
+}
+
+async function modalConfigNegocio(){
+  let config={aplica_iva:true,tasa_iva:21};
+  try{config=await api('/api/v1/config-negocio/');}catch(e){}
+  openModal(`
+    <h3>Configuración — IVA</h3>
+    <div class="field"><label>¿Los precios cargados incluyen IVA?</label>
+      <select id="cn-aplica">
+        <option value="true" ${config.aplica_iva?'selected':''}>Sí — descontarlo en el Estado de Resultados</option>
+        <option value="false" ${!config.aplica_iva?'selected':''}>No — no discriminar IVA</option>
+      </select>
+    </div>
+    <div class="field"><label>Tasa de IVA (%)</label><input id="cn-tasa" type="number" step="0.01" min="0" value="${config.tasa_iva}"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarConfigNegocio()">Guardar</button>
+    </div>`);
+}
+
+async function guardarConfigNegocio(){
+  const b={
+    aplica_iva:document.getElementById('cn-aplica').value==='true',
+    tasa_iva:parseFloat(document.getElementById('cn-tasa').value),
+  };
+  try{
+    await api('/api/v1/config-negocio/',{method:'PATCH',body:JSON.stringify(b)});
+    toast('Configuración actualizada');closeModal();renderEstadoResultados();
+  }catch(e){toast(e.message,'err');}
+}
 
 // ══════════════════════════════════════════════════════════════
 //  COMING SOON
