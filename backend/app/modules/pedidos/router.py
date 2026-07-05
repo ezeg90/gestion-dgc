@@ -110,11 +110,12 @@ def crear_pedido(
         subtotal = Decimal(str(item_data.cantidad)) * precio
         total += subtotal
 
-        # NO pasamos subtotal — PostgreSQL lo calcula como columna generada
+        # NO pasamos subtotal/subtotal_costo — PostgreSQL los calcula como columnas generadas
         pedido_items.append(PedidoItem(
             producto_id=str(item_data.producto_id),
             cantidad=item_data.cantidad,
             precio_unitario=precio,
+            costo_unitario=producto.costo_unitario or Decimal("0"),
             observacion=None,
         ))
 

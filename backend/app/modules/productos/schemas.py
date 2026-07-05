@@ -1,5 +1,6 @@
 from uuid import UUID
 from typing import Optional, Literal
+from decimal import Decimal
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -8,11 +9,12 @@ TipoArticulo = Literal["producto", "servicio"]
 
 
 class ProductoBase(BaseModel):
-    nombre:        str
-    descripcion:   Optional[str] = None
-    tipo:          TipoArticulo = "producto"
-    unidad_medida: UnidadMedida = "unidad"
-    categoria_id:  Optional[UUID] = None
+    nombre:         str
+    descripcion:    Optional[str] = None
+    tipo:           TipoArticulo = "producto"
+    unidad_medida:  UnidadMedida = "unidad"
+    categoria_id:   Optional[UUID] = None
+    costo_unitario: Optional[Decimal] = None
 
 
 class ProductoCreate(ProductoBase):
@@ -20,12 +22,13 @@ class ProductoCreate(ProductoBase):
 
 
 class ProductoUpdate(BaseModel):
-    nombre:        Optional[str] = None
-    descripcion:   Optional[str] = None
-    tipo:          Optional[TipoArticulo] = None
-    unidad_medida: Optional[UnidadMedida] = None
-    categoria_id:  Optional[UUID] = None
-    activo:        Optional[bool] = None
+    nombre:         Optional[str] = None
+    descripcion:    Optional[str] = None
+    tipo:           Optional[TipoArticulo] = None
+    unidad_medida:  Optional[UnidadMedida] = None
+    categoria_id:   Optional[UUID] = None
+    costo_unitario: Optional[Decimal] = None
+    activo:         Optional[bool] = None
 
 
 class ProductoOut(ProductoBase):

@@ -39,6 +39,10 @@ class PedidoItem(Base):
     cantidad        = Column(Numeric(10, 3), nullable=False)
     precio_unitario = Column(Numeric(12, 2), nullable=False)
     subtotal        = Column(Numeric(12, 2), Computed("cantidad * precio_unitario", persisted=True))
+    costo_unitario  = Column(Numeric(12, 2), nullable=False, default=0)
+    subtotal_costo  = Column(Numeric(12, 2), Computed("cantidad * costo_unitario", persisted=True))
+    # costo_unitario es una foto del costo del producto al momento de la venta
+    # (mismo criterio que precio_unitario) — no se recalcula si el costo cambia después.
     observacion     = Column(Text, nullable=True)
 
     pedido   = relationship("Pedido", back_populates="items")
@@ -47,4 +51,5 @@ class PedidoItem(Base):
     __table_args__ = (
         CheckConstraint("cantidad > 0",        name="chk_cantidad_positiva"),
         CheckConstraint("precio_unitario >= 0", name="chk_precio_positivo"),
+        CheckConstraint("costo_unitario >= 0",  name="chk_costo_positivo"),
     )
