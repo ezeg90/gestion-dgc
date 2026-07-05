@@ -12,8 +12,7 @@ class ProductoBase(BaseModel):
     descripcion:   Optional[str] = None
     tipo:          TipoArticulo = "producto"
     unidad_medida: UnidadMedida = "unidad"
-    categoria:     Optional[str] = None
-    subcategoria:  Optional[str] = None
+    categoria_id:  Optional[UUID] = None
 
 
 class ProductoCreate(ProductoBase):
@@ -25,15 +24,18 @@ class ProductoUpdate(BaseModel):
     descripcion:   Optional[str] = None
     tipo:          Optional[TipoArticulo] = None
     unidad_medida: Optional[UnidadMedida] = None
-    categoria:     Optional[str] = None
-    subcategoria:  Optional[str] = None
+    categoria_id:  Optional[UUID] = None
     activo:        Optional[bool] = None
 
 
 class ProductoOut(ProductoBase):
-    id:         UUID
-    activo:     bool
-    created_at: datetime
+    id:                  UUID
+    activo:              bool
+    created_at:          datetime
+    # Resueltos server-side a partir de categoria_id, para que el frontend
+    # no tenga que pedir el árbol de categorías solo para mostrar el nombre
+    categoria_nombre:    Optional[str] = None
+    subcategoria_nombre: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -69,6 +69,7 @@ td{padding:11px 14px;vertical-align:middle}
 .b-especial{background:rgba(245,158,11,.12);color:var(--orange)}
 .b-producto{background:rgba(123,130,160,.12);color:var(--muted)}
 .b-servicio{background:rgba(168,85,247,.12);color:#a855f7}
+.b-ambos{background:rgba(52,211,153,.12);color:#34d399}
 /* ── Cheques badges ── */
 .b-emitido{background:rgba(79,124,255,.12);color:var(--accent)}
 .b-en_transito{background:rgba(245,158,11,.12);color:var(--orange)}
@@ -186,6 +187,7 @@ td{padding:11px 14px;vertical-align:middle}
     <div class="nav-section">Operaciones</div>
     <div class="nav-item" data-page="clientes" onclick="goTo(this)"><span class="nav-icon">👤</span>Clientes</div>
     <div class="nav-item" data-page="productos" onclick="goTo(this)"><span class="nav-icon">📦</span>Productos</div>
+    <div class="nav-item" data-page="categorias" onclick="goTo(this)" style="padding-left:22px;font-size:12.5px"><span class="nav-icon">🗂️</span>Categorías</div>
     <div class="nav-item" data-page="precios" onclick="goTo(this)"><span class="nav-icon">🏷️</span>Listas de precios</div>
     <div class="nav-item" data-page="pedidos" onclick="goTo(this)"><span class="nav-icon">📋</span>Pedidos</div>
     <div class="nav-section">Próximamente</div>
@@ -254,8 +256,8 @@ async function api(path,opts={}){
 }
 
 // ── ROUTER ───────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Dashboard',clientes:'Clientes',productos:'Productos',precios:'Listas de precios',pedidos:'Pedidos',remitos:'Remitos',cuentas:'Cuentas corrientes',cheques:'Cheques emitidos',proveedores:'Proveedores',gastos:'Gastos'};
-const PAGE_FNS={dashboard:pgDashboard,clientes:pgClientes,productos:pgProductos,precios:pgPrecios,pedidos:pgPedidos,remitos:pgRemitos,cuentas:pgCuentas,cheques:pgCheques,proveedores:pgProveedores,gastos:pgGastos};
+const PAGE_TITLES={dashboard:'Dashboard',clientes:'Clientes',productos:'Productos',categorias:'Categorías',precios:'Listas de precios',pedidos:'Pedidos',remitos:'Remitos',cuentas:'Cuentas corrientes',cheques:'Cheques emitidos',proveedores:'Proveedores',gastos:'Gastos'};
+const PAGE_FNS={dashboard:pgDashboard,clientes:pgClientes,productos:pgProductos,categorias:pgCategorias,precios:pgPrecios,pedidos:pgPedidos,remitos:pgRemitos,cuentas:pgCuentas,cheques:pgCheques,proveedores:pgProveedores,gastos:pgGastos};
 function goTo(el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
@@ -493,40 +495,231 @@ async function verCliente(id){
 }
 
 // ══════════════════════════════════════════════════════════════
+//  CATEGORÍAS (soporte para productos y precios)
+// ══════════════════════════════════════════════════════════════
+async function getCategoriasArbol(forzar=false){
+  if(forzar||!window._catArbol) window._catArbol=await api('/api/v1/categorias/arbol');
+  return window._catArbol;
+}
+
+function opcionesCategoriaHTML(arbol,tipo,seleccionadoId){
+  const filtradas=arbol.filter(c=>!tipo||!c.tipo||c.tipo===tipo);
+  return '<option value="">— Sin categoría —</option>'+
+    filtradas.map(c=>`<option value="${c.id}" ${c.id===seleccionadoId?'selected':''}>${c.nombre}</option>`).join('');
+}
+
+function opcionesSubcategoriaHTML(cat,tipo,seleccionadoId){
+  const hijas=(cat&&cat.hijas)||[];
+  const filtradas=hijas.filter(h=>!tipo||!h.tipo||h.tipo===tipo);
+  if(!filtradas.length) return '<option value="">— Ninguna —</option>';
+  return '<option value="">— Ninguna —</option>'+
+    filtradas.map(h=>`<option value="${h.id}" ${h.id===seleccionadoId?'selected':''}>${h.nombre}</option>`).join('');
+}
+
+function ubicarCategoria(arbol,categoriaId){
+  if(!categoriaId) return {catId:'',subId:''};
+  const top=arbol.find(c=>c.id===categoriaId);
+  if(top) return {catId:top.id,subId:''};
+  for(const c of arbol){
+    const sub=(c.hijas||[]).find(h=>h.id===categoriaId);
+    if(sub) return {catId:c.id,subId:sub.id};
+  }
+  return {catId:'',subId:''};
+}
+
+async function refrescarSelectsCategoria(prefix,categoriaIdActual){
+  const arbol=await getCategoriasArbol();
+  const tipo=document.getElementById(`${prefix}-tipo`).value;
+  const ubic=ubicarCategoria(arbol,categoriaIdActual);
+  const catSel=document.getElementById(`${prefix}-cat`);
+  catSel.innerHTML=opcionesCategoriaHTML(arbol,tipo,ubic.catId);
+  catSel.onchange=()=>onCategoriaChange(prefix);
+  onCategoriaChange(prefix,ubic.subId);
+}
+
+function onCategoriaChange(prefix,seleccionadoSubId=null){
+  const arbol=window._catArbol||[];
+  const catSel=document.getElementById(`${prefix}-cat`);
+  const subSel=document.getElementById(`${prefix}-subcat`);
+  const tipo=document.getElementById(`${prefix}-tipo`).value;
+  const cat=arbol.find(c=>c.id===catSel.value);
+  subSel.innerHTML=opcionesSubcategoriaHTML(cat,tipo,seleccionadoSubId);
+}
+
+function obtenerCategoriaIdSeleccionada(prefix){
+  const sub=document.getElementById(`${prefix}-subcat`).value;
+  const cat=document.getElementById(`${prefix}-cat`).value;
+  return sub||cat||null;
+}
+
+async function onTipoChange(prefix){
+  const tipoSel=document.getElementById(`${prefix}-tipo`);
+  const unidadSel=document.getElementById(`${prefix}-unidad`);
+  if(tipoSel.value==='servicio'&&['kg','litro','docena','caja'].includes(unidadSel.value))unidadSel.value='hora';
+  await refrescarSelectsCategoria(prefix,null);
+}
+
+async function pgCategorias(){
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevaCategoria()">+ Nueva categoría</button>`;
+  try{
+    const arbol=await getCategoriasArbol(true);
+    setContent(`
+      <div class="section-header"><h3>${arbol.length} categorías principales</h3></div>
+      <div id="cat-list" style="display:flex;flex-direction:column;gap:10px">
+        ${arbol.map(c=>`
+          <div class="stat-card" style="text-align:left">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:10px">
+                <strong style="font-size:15px">${c.nombre}</strong>
+                ${badge(c.tipo||'ambos')}
+                ${badge(c.activo?'activo':'inactivo')}
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm" onclick="modalNuevaCategoria('${c.id}','${c.nombre.replace(/'/g,"\\'")}')">+ Subcategoría</button>
+                <button class="btn btn-ghost btn-sm" onclick="modalEditarCategoria('${c.id}')">Editar</button>
+                <button class="btn btn-ghost btn-sm" onclick="eliminarCategoria('${c.id}','${c.nombre.replace(/'/g,"\\'")}')">Eliminar</button>
+              </div>
+            </div>
+            ${(c.hijas||[]).length?`<div style="margin-top:10px;padding-left:16px;border-left:2px solid var(--border);display:flex;flex-direction:column;gap:6px">
+              ${c.hijas.map(h=>`
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span>${h.nombre}</span>${badge(h.tipo||'ambos')}${badge(h.activo?'activo':'inactivo')}
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn btn-ghost btn-sm" onclick="modalEditarCategoria('${h.id}')">Editar</button>
+                    <button class="btn btn-ghost btn-sm" onclick="eliminarCategoria('${h.id}','${h.nombre.replace(/'/g,"\\'")}')">Eliminar</button>
+                  </div>
+                </div>`).join('')}
+            </div>`:'<div class="muted" style="margin-top:8px;font-size:12.5px">Sin subcategorías</div>'}
+          </div>`).join('')||'<div class="empty">Sin categorías todavía</div>'}
+      </div>`);
+  }catch(e){setContent(`<div class="empty">⚠️ ${e.message}</div>`);}
+}
+
+function _buscarCategoriaPorId(id){
+  for(const c of (window._catArbol||[])){
+    if(c.id===id)return c;
+    const h=(c.hijas||[]).find(x=>x.id===id);
+    if(h)return h;
+  }
+  return null;
+}
+
+function modalNuevaCategoria(padreId=null,padreNombre=null){
+  openModal(`
+    <h3>${padreId?`Nueva subcategoría de "${padreNombre}"`:'Nueva categoría'}</h3>
+    <input type="hidden" id="fc-padre" value="${padreId||''}"/>
+    <div class="field"><label>Nombre *</label><input id="fc-nombre" placeholder="Ej: Repuestos, Cortes de vaca, Mano de obra"/></div>
+    <div class="field"><label>Aplica a</label>
+      <select id="fc-tipo">
+        <option value="">Ambos (producto y servicio)</option>
+        <option value="producto">Solo productos</option>
+        <option value="servicio">Solo servicios</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="crearCategoria()">Crear</button>
+    </div>`);
+}
+
+async function crearCategoria(){
+  const b={
+    nombre:document.getElementById('fc-nombre').value,
+    padre_id:document.getElementById('fc-padre').value||null,
+    tipo:document.getElementById('fc-tipo').value||null,
+  };
+  if(!b.nombre){toast('El nombre es obligatorio','err');return;}
+  try{await api('/api/v1/categorias/',{method:'POST',body:JSON.stringify(b)});toast('Categoría creada');closeModal();pgCategorias();}catch(e){toast(e.message,'err');}
+}
+
+function modalEditarCategoria(id){
+  const c=_buscarCategoriaPorId(id);
+  if(!c){toast('Categoría no encontrada','err');return;}
+  openModal(`
+    <h3>Editar categoría</h3>
+    <div class="field"><label>Nombre *</label><input id="fec-nombre" value="${c.nombre}"/></div>
+    <div class="field"><label>Aplica a</label>
+      <select id="fec-tipo">
+        <option value="" ${!c.tipo?'selected':''}>Ambos (producto y servicio)</option>
+        <option value="producto" ${c.tipo==='producto'?'selected':''}>Solo productos</option>
+        <option value="servicio" ${c.tipo==='servicio'?'selected':''}>Solo servicios</option>
+      </select>
+    </div>
+    <div class="field"><label>Estado</label>
+      <select id="fec-activo">
+        <option value="true" ${c.activo?'selected':''}>Activo</option>
+        <option value="false" ${!c.activo?'selected':''}>Inactivo</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCategoria('${id}')">Guardar</button>
+    </div>`);
+}
+
+async function guardarCategoria(id){
+  const b={
+    nombre:document.getElementById('fec-nombre').value,
+    tipo:document.getElementById('fec-tipo').value||null,
+    activo:document.getElementById('fec-activo').value==='true',
+  };
+  try{await api(`/api/v1/categorias/${id}`,{method:'PATCH',body:JSON.stringify(b)});toast('Categoría actualizada');closeModal();pgCategorias();}catch(e){toast(e.message,'err');}
+}
+
+async function eliminarCategoria(id,nombre){
+  if(!confirm(`¿Eliminar la categoría "${nombre}"? Esta acción no se puede deshacer.`))return;
+  try{await api(`/api/v1/categorias/${id}`,{method:'DELETE'});toast('Categoría eliminada');pgCategorias();}catch(e){toast(e.message,'err');}
+}
+
+// ══════════════════════════════════════════════════════════════
 //  PRODUCTOS
 // ══════════════════════════════════════════════════════════════
 async function pgProductos(){
   document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="modalNuevoProducto()">+ Nuevo producto</button>`;
   try{
-    const rows=await api('/api/v1/productos/?solo_activos=false');
+    const [rows,arbol]=await Promise.all([api('/api/v1/productos/?solo_activos=false'),getCategoriasArbol()]);
+    window._prodRows=rows;
     window._prodTipoFiltro=window._prodTipoFiltro||'todos';
+    window._prodCatFiltro=window._prodCatFiltro||'todas';
     const pintar=()=>{
-      const f=window._prodTipoFiltro;
-      const filtradas=f==='todos'?rows:rows.filter(p=>p.tipo===f);
-      document.getElementById('tb-prod').innerHTML=filtradas.map(p=>`<tr>
-            <td><strong>${p.nombre}</strong></td>
+      const ft=window._prodTipoFiltro,fc=window._prodCatFiltro;
+      let filtradas=rows;
+      if(ft!=='todos')filtradas=filtradas.filter(p=>p.tipo===ft);
+      if(fc!=='todas')filtradas=filtradas.filter(p=>p.categoria_nombre===fc);
+      document.getElementById('tb-prod').innerHTML=filtradas.map(p=>{
+        const catLabel=p.subcategoria_nombre?`${p.categoria_nombre} › ${p.subcategoria_nombre}`:(p.categoria_nombre||'—');
+        return `<tr>
+            <td><strong>${p.nombre}</strong><div class="muted mono" style="font-size:10.5px;cursor:pointer" title="${p.id}\n(clic para copiar completo)" onclick="navigator.clipboard.writeText('${p.id}');toast('ID copiado')">${p.id.slice(0,8)}…</div></td>
             <td>${badge(p.tipo)}</td>
-            <td class="muted">${p.descripcion||'—'}</td>
+            <td class="muted" style="font-size:12.5px">${catLabel}</td>
             <td class="mono">${p.unidad_medida}</td>
             <td>${badge(p.activo?'activo':'inactivo')}</td>
-            <td><button class="btn btn-ghost btn-sm" onclick="modalEditarProducto('${p.id}','${p.nombre.replace(/'/g,"\\'")}','${(p.descripcion||'').replace(/'/g,"\\'")}','${p.tipo}','${p.unidad_medida}',${p.activo})">Editar</button></td>
-          </tr>`).join('')||'<tr><td colspan="6" class="empty">Sin productos</td></tr>';
+            <td><button class="btn btn-ghost btn-sm" onclick="modalEditarProducto('${p.id}')">Editar</button></td>
+          </tr>`;
+      }).join('')||'<tr><td colspan="6" class="empty">Sin productos</td></tr>';
       document.getElementById('cnt-prod').textContent=filtradas.length;
     };
+    const catsFiltro=arbol.map(c=>c.nombre);
     setContent(`
       <div class="section-header">
         <h3><span id="cnt-prod">${rows.length}</span> productos</h3>
-        <div style="display:flex;gap:10px;align-items:center">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <select id="prod-tipo-filtro" onchange="window._prodTipoFiltro=this.value;pintarProductos()">
             <option value="todos">Todos los tipos</option>
             <option value="producto">Solo productos</option>
             <option value="servicio">Solo servicios</option>
           </select>
-          <input class="search-input" placeholder="Buscar…" oninput="filtrar(this.value,'tb-prod')"/>
+          <select id="prod-cat-filtro" onchange="window._prodCatFiltro=this.value;pintarProductos()">
+            <option value="todas">Todas las categorías</option>
+            ${catsFiltro.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+          <input class="search-input" placeholder="Buscar por nombre, ID, categoría…" oninput="filtrar(this.value,'tb-prod')"/>
         </div>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Nombre</th><th>Tipo</th><th>Descripción</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Nombre / ID</th><th>Tipo</th><th>Categoría</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
         <tbody id="tb-prod"></tbody>
       </table></div>`);
     window.pintarProductos=pintar;
@@ -538,7 +731,7 @@ async function modalNuevoProducto(){
   openModal(`
     <h3>Nuevo producto</h3>
     <div class="field"><label>Tipo *</label>
-      <select id="fp-tipo" onchange="toggleUnidadServicio('fp-tipo','fp-unidad')">
+      <select id="fp-tipo" onchange="onTipoChange('fp')">
         <option value="producto">Producto</option>
         <option value="servicio">Servicio</option>
       </select>
@@ -552,20 +745,13 @@ async function modalNuevoProducto(){
         <option value="hora">Hora</option><option value="trabajo">Trabajo</option>
       </select>
     </div>
-    <div class="field"><label>Categoría</label><input id="fp-cat" placeholder="Ej: carnicos, repuestos, mano_de_obra"/></div>
-    <div class="field"><label>Subcategoría</label><input id="fp-subcat" placeholder="Ej: cortes_vaca, diagnostico"/></div>
+    <div class="field"><label>Categoría</label><select id="fp-cat"></select></div>
+    <div class="field"><label>Subcategoría</label><select id="fp-subcat"></select></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="crearProducto()">Crear</button>
     </div>`);
-}
-
-function toggleUnidadServicio(tipoSelId,unidadSelId){
-  const tipo=document.getElementById(tipoSelId).value;
-  const unidadSel=document.getElementById(unidadSelId);
-  if(tipo==='servicio'&&(unidadSel.value==='kg'||unidadSel.value==='litro'||unidadSel.value==='docena'||unidadSel.value==='caja')){
-    unidadSel.value='hora';
-  }
+  await refrescarSelectsCategoria('fp',null);
 }
 
 async function crearProducto(){
@@ -574,45 +760,49 @@ async function crearProducto(){
     descripcion:document.getElementById('fp-desc').value||null,
     tipo:document.getElementById('fp-tipo').value,
     unidad_medida:document.getElementById('fp-unidad').value,
-    categoria:document.getElementById('fp-cat').value||null,
-    subcategoria:document.getElementById('fp-subcat').value||null,
+    categoria_id:obtenerCategoriaIdSeleccionada('fp'),
   };
   if(!b.nombre){toast('El nombre es obligatorio','err');return;}
   try{await api('/api/v1/productos/',{method:'POST',body:JSON.stringify(b)});toast('Producto creado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
 }
 
-async function modalEditarProducto(id,nombre,desc,tipo,unidad,activo){
+async function modalEditarProducto(id){
+  const p=(window._prodRows||[]).find(x=>x.id===id);
+  if(!p){toast('Producto no encontrado','err');return;}
   openModal(`
     <h3>Editar producto</h3>
     <div class="field"><label>Tipo *</label>
-      <select id="fep-tipo">
-        <option value="producto" ${tipo==='producto'?'selected':''}>Producto</option>
-        <option value="servicio" ${tipo==='servicio'?'selected':''}>Servicio</option>
+      <select id="fep-tipo" onchange="onTipoChange('fep')">
+        <option value="producto" ${p.tipo==='producto'?'selected':''}>Producto</option>
+        <option value="servicio" ${p.tipo==='servicio'?'selected':''}>Servicio</option>
       </select>
     </div>
-    <div class="field"><label>Nombre *</label><input id="fep-nombre" value="${nombre}"/></div>
-    <div class="field"><label>Descripción</label><textarea id="fep-desc" rows="2">${desc}</textarea></div>
+    <div class="field"><label>Nombre *</label><input id="fep-nombre" value="${p.nombre.replace(/"/g,'&quot;')}"/></div>
+    <div class="field"><label>Descripción</label><textarea id="fep-desc" rows="2">${p.descripcion||''}</textarea></div>
     <div class="field"><label>Unidad de medida</label>
       <select id="fep-unidad">
-        <option value="unidad" ${unidad==='unidad'?'selected':''}>Unidad</option>
-        <option value="kg" ${unidad==='kg'?'selected':''}>Kg</option>
-        <option value="litro" ${unidad==='litro'?'selected':''}>Litro</option>
-        <option value="docena" ${unidad==='docena'?'selected':''}>Docena</option>
-        <option value="caja" ${unidad==='caja'?'selected':''}>Caja</option>
-        <option value="hora" ${unidad==='hora'?'selected':''}>Hora</option>
-        <option value="trabajo" ${unidad==='trabajo'?'selected':''}>Trabajo</option>
+        <option value="unidad" ${p.unidad_medida==='unidad'?'selected':''}>Unidad</option>
+        <option value="kg" ${p.unidad_medida==='kg'?'selected':''}>Kg</option>
+        <option value="litro" ${p.unidad_medida==='litro'?'selected':''}>Litro</option>
+        <option value="docena" ${p.unidad_medida==='docena'?'selected':''}>Docena</option>
+        <option value="caja" ${p.unidad_medida==='caja'?'selected':''}>Caja</option>
+        <option value="hora" ${p.unidad_medida==='hora'?'selected':''}>Hora</option>
+        <option value="trabajo" ${p.unidad_medida==='trabajo'?'selected':''}>Trabajo</option>
       </select>
     </div>
+    <div class="field"><label>Categoría</label><select id="fep-cat"></select></div>
+    <div class="field"><label>Subcategoría</label><select id="fep-subcat"></select></div>
     <div class="field"><label>Estado</label>
       <select id="fep-activo">
-        <option value="true" ${activo?'selected':''}>Activo</option>
-        <option value="false" ${!activo?'selected':''}>Inactivo</option>
+        <option value="true" ${p.activo?'selected':''}>Activo</option>
+        <option value="false" ${!p.activo?'selected':''}>Inactivo</option>
       </select>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarProducto('${id}')">Guardar</button>
     </div>`);
+  await refrescarSelectsCategoria('fep',p.categoria_id);
 }
 
 async function guardarProducto(id){
@@ -621,6 +811,7 @@ async function guardarProducto(id){
     descripcion:document.getElementById('fep-desc').value||null,
     tipo:document.getElementById('fep-tipo').value,
     unidad_medida:document.getElementById('fep-unidad').value,
+    categoria_id:obtenerCategoriaIdSeleccionada('fep'),
     activo:document.getElementById('fep-activo').value==='true',
   };
   try{await api(`/api/v1/productos/${id}`,{method:'PATCH',body:JSON.stringify(b)});toast('Producto actualizado');closeModal();pgProductos();}catch(e){toast(e.message,'err');}
@@ -903,18 +1094,12 @@ async function crearPedido(){
 function generarOpcionesProductos(prods){
   const grupos={};
   prods.forEach(p=>{
-    const g=p.subcategoria||p.categoria||'otros';
+    const g=p.subcategoria_nombre||p.categoria_nombre||'Otros';
     if(!grupos[g])grupos[g]=[];
     grupos[g].push(p);
   });
-  const labels={
-    cortes_vaca:'Cortes de Vaca',cortes_cerdo:'Cortes de Cerdo',
-    pollo:'Pollo',embutidos:'Embutidos',achuras:'Achuras',
-    fiambres:'Fiambres',procesados:'Procesados',milanesas:'Milanesas',
-    escabeches:'Escabeches',otros:'Otros'
-  };
   return Object.entries(grupos).map(([g,ps])=>
-    `<optgroup label="${labels[g]||g}">
+    `<optgroup label="${g}">
       ${ps.map(p=>`<option value="${p.id}">${p.nombre} (${p.unidad_medida})</option>`).join('')}
     </optgroup>`
   ).join('');
